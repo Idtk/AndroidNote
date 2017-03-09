@@ -86,9 +86,9 @@ public class NinePhotoView extends FrameLayout implements Observer{
                 setMeasuredDimension(currentWidth + getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
             }
         } else {
-            childSize = width;
-            height = width;
-            setMeasuredDimension(width + getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
+            childSize = width/2;
+            height = width/2;
+            setMeasuredDimension(childSize+ getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
         }
 
         if (adapter.getItemCount() == 0) {
