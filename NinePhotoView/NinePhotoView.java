@@ -72,7 +72,7 @@ public class NinePhotoView extends FrameLayout implements Observer{
         int height;
 
         if (adapter.getItemCount() < 0 || adapter.getItemCount() > 9) {
-            throw new IllegalStateException("此参数不可以 小于0 or 大于9");
+            throw new IllegalStateException("itemCount may not be more than 9 or less than 0");
         }
 
         if (adapter.getItemCount() > 1) {
@@ -98,7 +98,7 @@ public class NinePhotoView extends FrameLayout implements Observer{
 
     private void childLayout(int left, int top, int right, int bottom) {
         if (adapter.getItemCount() < 0 || adapter.getItemCount() > 9) {
-            throw new IllegalStateException("此参数不可以 小于0 or 大于9");
+            throw new IllegalStateException("itemCount may not be more than 9 or less than 0");
         }
         int count = adapter.getItemCount();
         int colNum = 3;
@@ -125,7 +125,7 @@ public class NinePhotoView extends FrameLayout implements Observer{
             int childTop = getPaddingTop() + (childSize + border) * (rows);
             int childRight = childLeft + childSize;
             int childBottom = childTop + childSize;
-            Log.d("layout",childLeft+":"+childTop+":"+childRight+":"+childBottom);
+//            Log.d("layout",childLeft+":"+childTop+":"+childRight+":"+childBottom);
             childView.layout(childLeft, childTop, childRight, childBottom);
         }
     }
