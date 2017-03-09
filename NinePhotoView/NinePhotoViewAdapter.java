@@ -1,6 +1,6 @@
 package com.idtk.androiddemo.widget;
 
-import android.view.View;
+import android.view.ViewGroup;
 
 import java.util.Observable;
 
@@ -8,27 +8,24 @@ import java.util.Observable;
  * Created by Idtk on 2017/3/8.
  */
 
-public abstract class NinePhotoViewAdapter extends Observable{
+public abstract class NinePhotoViewAdapter<T extends NinePhotoViewHolder> extends Observable {
 
     public NinePhotoViewAdapter() {
         super();
     }
 
     public int getItemCount(){
-      return 0;
+        return 0;
     }
-	
-	/**
-	 * 建议增加此设置imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-	 */
-    public abstract View createView();
 
-    public abstract void displayView(View childView, int position);
+    public abstract T createView(ViewGroup parent);
+
+    public abstract void displayView(T holder, int position);
+
 
     public void notifyChanged(){
         setChanged();
         notifyObservers();
     }
-
 
 }

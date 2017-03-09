@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -22,6 +23,8 @@ public class NinePhotoView extends FrameLayout implements Observer{
     private NinePhotoViewAdapter adapter;
     private int border = 5;
     private int childSize;
+    private ArrayList<NinePhotoViewHolder> mRecyclerList = new ArrayList<>();
+
 
     public NinePhotoView(@NonNull Context context) {
         super(context);
@@ -60,10 +63,7 @@ public class NinePhotoView extends FrameLayout implements Observer{
 
     private void ninePhotoCreateView(){
         for (int i = 0; i < adapter.getItemCount(); i++) {
-            if (adapter.createView() == null) {
-                return;
-            }
-            addView(adapter.createView(),generateDefaultLayoutParams());
+            addView(generateViewHolder(i).getItemView(),generateDefaultLayoutParams());
         }
     }
 
@@ -74,30 +74,25 @@ public class NinePhotoView extends FrameLayout implements Observer{
         if (adapter.getItemCount() < 0 || adapter.getItemCount() > 9) {
             throw new IllegalStateException("此参数不可以 小于0 or 大于9");
         }
-        if (adapter.getItemCount() == 0) {
-            setMeasuredDimension(0, 0);
-        }
-//        if (adapter.getItemCount() > 0) {
-//            childSize = (width - border * 2) / 3;
-//            if (adapter.getItemCount() < 4) {
-//                setMeasuredDimension(childSize * adapter.getItemCount() + border * (
-//                        adapter.getItemCount() - 1), childSize);
-//            } else if (adapter.getItemCount() == 4) {
-//                setMeasuredDimension(childSize * 2 + border, childSize * 2 + border);
-//            } else {
-//                setMeasuredDimension(childSize * 3 + border * 2, (int) (childSize *
-//                        Math.ceil(adapter.getItemCount() / 3) + border * Math.ceil(adapter.getItemCount() / 3 - 1)));
-//            }
-//        }
+
         if (adapter.getItemCount() > 1) {
             childSize = (width - border * 2) / 3;
             height = (int) (childSize * (int) Math.ceil(adapter.getItemCount() / 3.0) + border * (int) Math.ceil(adapter.getItemCount() / 3.0 - 1));
-            setMeasuredDimension(width + getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
-            Log.d("size",width+":"+height+":"+childSize+":"+Math.ceil(adapter.getItemCount() / 3.0));
+            if (adapter.getItemCount() == 4 || adapter.getItemCount() == 2) {
+                int currentWidth = childSize*2 + border;
+                setMeasuredDimension(currentWidth + getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
+            }else {
+                int currentWidth = childSize*3 + border*2;
+                setMeasuredDimension(currentWidth + getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
+            }
         } else {
             childSize = width;
             height = width;
             setMeasuredDimension(width + getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
+        }
+
+        if (adapter.getItemCount() == 0) {
+            setMeasuredDimension(0, 0);
         }
     }
 
@@ -113,30 +108,37 @@ public class NinePhotoView extends FrameLayout implements Observer{
 
         for (int i = 0; i < count; i++) {
             View childView = getChildAt(i);
-            if (adapter != null && childView != null) {
-                adapter.displayView(childView, i);
+
+            if (childView == null){
+                return;
+            }
+
+            if (adapter != null && !mRecyclerList.get(i).getFlag()) {
+                adapter.displayView(generateViewHolder(i), i);
+                mRecyclerList.get(i).setFlag(true);
             }
 
             int rows = i / colNum;
             int cols = i % colNum;
 
-            int childLeft = left + getPaddingLeft() + (childSize + border) * (cols);
-            int childTop = top + getPaddingTop() + (childSize + border) * (rows);
+            int childLeft = getPaddingLeft() + (childSize + border) * (cols);
+            int childTop = getPaddingTop() + (childSize + border) * (rows);
             int childRight = childLeft + childSize;
             int childBottom = childTop + childSize;
-            Log.d("layout",i + ":" + childLeft + ":" + childTop + ":" + childRight + ":" + childBottom);
+            Log.d("layout",childLeft+":"+childTop+":"+childRight+":"+childBottom);
             childView.layout(childLeft, childTop, childRight, childBottom);
         }
     }
 
+
+
     public void setAdapter(NinePhotoViewAdapter adapter){
         this.adapter = adapter;
-//        for (int i = 0; i < adapter.getItemCount(); i++) {
-//            if (adapter.createView() == null) {
-//                return;
-//            }
-//            addView(adapter.createView(),generateDefaultLayoutParams());
-//        }
+        adapter.addObserver(this);
+//        mRecyclerList.clear();
+        for(NinePhotoViewHolder holder: mRecyclerList){
+            holder.setFlag(false);
+        }
     }
 
     public void setBorder(int border){
@@ -147,8 +149,34 @@ public class NinePhotoView extends FrameLayout implements Observer{
     public void update(Observable o, Object arg) {
         if (o instanceof NinePhotoViewAdapter){
             this.adapter = (NinePhotoViewAdapter) o;
+            adapter.addObserver(this);
+//            mRecyclerList.clear();
+            for(NinePhotoViewHolder holder: mRecyclerList){
+                holder.setFlag(false);
+            }
             requestLayout();
             invalidate();
         }
+    }
+
+    private NinePhotoViewHolder generateViewHolder(int position){
+//        Log.d("position",mRecyclerList.size()+"");
+        if (position < mRecyclerList.size()) {
+            return mRecyclerList.get(position);
+        } else {
+            if (adapter != null){
+                NinePhotoViewHolder holder = adapter.createView(NinePhotoView.this);
+                if (holder == null){
+                    return null;
+                }
+                mRecyclerList.add(holder);
+                return holder;
+            } else
+                return null;
+        }
+    }
+
+    public void clearRecycler(){
+        mRecyclerList.clear();
     }
 }
