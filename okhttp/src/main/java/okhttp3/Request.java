@@ -96,6 +96,9 @@ public final class Request {
         + '}';
   }
 
+  /**
+   * Builder模式
+   */
   public static class Builder {
     HttpUrl url;
     String method;
@@ -103,6 +106,9 @@ public final class Request {
     RequestBody body;
     Object tag;
 
+    /**
+     * 默认请求方法和请求头
+     */
     public Builder() {
       this.method = "GET";
       this.headers = new Headers.Builder();
@@ -116,6 +122,11 @@ public final class Request {
       this.headers = request.headers.newBuilder();
     }
 
+    /**
+     * 设置请求地址
+     * @param url 地址
+     * @return Builder对象
+     */
     public Builder url(HttpUrl url) {
       if (url == null) throw new NullPointerException("url == null");
       this.url = url;
@@ -207,6 +218,11 @@ public final class Request {
       return method("HEAD", null);
     }
 
+    /**
+     * 设置请求方法为post
+     * @param body 请求体
+     * @return
+     */
     public Builder post(RequestBody body) {
       return method("POST", body);
     }
@@ -250,6 +266,10 @@ public final class Request {
       return this;
     }
 
+    /**
+     * 调用Request构造函数，完成设置，返回Request对象
+     * @return Request对象
+     */
     public Request build() {
       if (url == null) throw new IllegalStateException("url == null");
       return new Request(this);
