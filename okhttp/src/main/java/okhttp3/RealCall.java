@@ -30,6 +30,9 @@ import okhttp3.internal.platform.Platform;
 
 import static okhttp3.internal.platform.Platform.INFO;
 
+/**
+ * okhttp3.Call的实现类
+ */
 final class RealCall implements Call {
   final OkHttpClient client;
   final RetryAndFollowUpInterceptor retryAndFollowUpInterceptor;
@@ -43,7 +46,7 @@ final class RealCall implements Call {
 
   RealCall(OkHttpClient client, Request originalRequest, boolean forWebSocket) {
     this.client = client;
-    this.originalRequest = originalRequest;
+    this.originalRequest = originalRequest;// 传递进入的Request对象
     this.forWebSocket = forWebSocket;
     this.retryAndFollowUpInterceptor = new RetryAndFollowUpInterceptor(client, forWebSocket);
   }
@@ -52,6 +55,15 @@ final class RealCall implements Call {
     return originalRequest;
   }
 
+  /**
+   * 立即执行请求
+   * @return
+   * @throws IOException
+   * 1、检查请求是否已经被执行，每个Call只能执行一次
+   * 2、通过调用dispatcher类,将Call加入到执行的同步请求列表(Dispatcher.runningSyncCalls)中
+   * 3、获取返回的拦截链
+   * 4、通知dispatcher已完成
+   */
   @Override public Response execute() throws IOException {
     synchronized (this) {
       if (executed) throw new IllegalStateException("Already Executed");
@@ -68,6 +80,9 @@ final class RealCall implements Call {
     }
   }
 
+  /**
+   * 捕获异常
+   */
   private void captureCallStackTrace() {
     Object callStackTrace = Platform.get().getStackTraceForCloseable("response.body().close()");
     retryAndFollowUpInterceptor.setCallStackTrace(callStackTrace);
@@ -161,21 +176,35 @@ final class RealCall implements Call {
     return originalRequest.url().redact();
   }
 
+  /**
+   * 构建一个完整的堆栈拦截器
+   * @return
+   * @throws IOException
+   */
   Response getResponseWithInterceptorChain() throws IOException {
     // Build a full stack of interceptors.
     List<Interceptor> interceptors = new ArrayList<>();
+    // client中配置的interceptors
     interceptors.addAll(client.interceptors());
+    // 重定向与失败重试
     interceptors.add(retryAndFollowUpInterceptor);
+    // 用户的请求头处理，响应处理
+    // (Cookie持久性策略)
     interceptors.add(new BridgeInterceptor(client.cookieJar()));
+    // 缓存请求、响应缓存的写入 (客户端设置的缓存策略)
     interceptors.add(new CacheInterceptor(client.internalCache()));
+    // 与服务器建立连接
     interceptors.add(new ConnectInterceptor(client));
     if (!forWebSocket) {
+      // client配置的networkInterceptors，用于观察请求和响应
       interceptors.addAll(client.networkInterceptors());
     }
+    // 发送请求，读取服务器的响应
     interceptors.add(new CallServerInterceptor(forWebSocket));
-
+    // 设置完整的OkHttp拦截链
     Interceptor.Chain chain = new RealInterceptorChain(
         interceptors, null, null, null, 0, originalRequest);
+    // 调用链中的下一个拦截器，在这里是开始调用第一个拦截器
     return chain.proceed(originalRequest);
   }
 }
