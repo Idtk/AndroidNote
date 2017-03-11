@@ -62,6 +62,7 @@ public class NinePhotoView extends FrameLayout implements Observer{
     }
 
     private void ninePhotoCreateView(){
+		removeAllViews();
         for (int i = 0; i < adapter.getItemCount(); i++) {
             addView(generateViewHolder(i).getItemView(),generateDefaultLayoutParams());
         }
@@ -73,6 +74,11 @@ public class NinePhotoView extends FrameLayout implements Observer{
 
         if (adapter.getItemCount() < 0 || adapter.getItemCount() > 9) {
             throw new IllegalStateException("itemCount may not be more than 9 or less than 0");
+        }
+		
+		if (adapter.getItemCount() == 0) {
+            setMeasuredDimension(0, 0);
+			return;
         }
 
         if (adapter.getItemCount() > 1) {
@@ -86,14 +92,11 @@ public class NinePhotoView extends FrameLayout implements Observer{
                 setMeasuredDimension(currentWidth + getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
             }
         } else {
-            childSize = width/2;
-            height = width/2;
+            childSize = width/3;
+            height = width/3;
             setMeasuredDimension(childSize+ getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
         }
 
-        if (adapter.getItemCount() == 0) {
-            setMeasuredDimension(0, 0);
-        }
     }
 
     private void childLayout(int left, int top, int right, int bottom) {
