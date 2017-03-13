@@ -1,4 +1,4 @@
-package com.idtk.androiddemo.widget;
+package com.idtk.NinePhotoView.widget;
 
 import android.view.ViewGroup;
 

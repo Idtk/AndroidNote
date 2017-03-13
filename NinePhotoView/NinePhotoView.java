@@ -1,4 +1,4 @@
-package com.idtk.androiddemo.widget;
+package com.idtk.NinePhotoView.widget;
 
 import android.content.Context;
 import android.support.annotation.AttrRes;
@@ -62,8 +62,9 @@ public class NinePhotoView extends FrameLayout implements Observer{
     }
 
     private void ninePhotoCreateView(){
-		removeAllViews();
+        removeAllViews();
         for (int i = 0; i < adapter.getItemCount(); i++) {
+//            removeView(getChildAt(i));
             addView(generateViewHolder(i).getItemView(),generateDefaultLayoutParams());
         }
     }
@@ -75,10 +76,10 @@ public class NinePhotoView extends FrameLayout implements Observer{
         if (adapter.getItemCount() < 0 || adapter.getItemCount() > 9) {
             throw new IllegalStateException("itemCount may not be more than 9 or less than 0");
         }
-		
-		if (adapter.getItemCount() == 0) {
+
+        if (adapter.getItemCount() == 0) {
             setMeasuredDimension(0, 0);
-			return;
+            return;
         }
 
         if (adapter.getItemCount() > 1) {
@@ -94,15 +95,69 @@ public class NinePhotoView extends FrameLayout implements Observer{
         } else {
             childSize = width/3;
             height = width/3;
-            setMeasuredDimension(childSize+ getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
+            setMeasuredDimension(width + getPaddingLeft() + getPaddingRight(), height + getPaddingTop() + getPaddingBottom());
         }
 
+//        Log.d("width",getMaxChildWidth()+"");
+
+//        Log.d("TAG",width + ":" + height + ":" + childSize);
+    }
+
+    private int getMaxChildWidth() {
+        int childCount = getChildCount();
+        int maxWidth = 0;
+        for (int i = 0; i < childCount; i++) {
+            View childView = getChildAt(i);
+            if (childView.getMeasuredWidth() > maxWidth)
+                maxWidth = childView.getMeasuredWidth();
+
+        }
+
+        return maxWidth;
     }
 
     private void childLayout(int left, int top, int right, int bottom) {
+
         if (adapter.getItemCount() < 0 || adapter.getItemCount() > 9) {
             throw new IllegalStateException("itemCount may not be more than 9 or less than 0");
         }
+
+//        if (adapter.getItemCount() == 1) {
+//
+//            View childView = getChildAt(0);
+//
+//            if (childView == null){
+//                return;
+//            }
+//
+//            if (adapter != null && !mRecyclerList.get(0).getFlag()) {
+//                adapter.displayView(generateViewHolder(0), 0);
+//                mRecyclerList.get(0).setFlag(true);
+//            }
+//
+//            int times = 1;
+//
+//            while ((childView.getRight()-childView.getLeft())/times >= childSize ||
+//                    (childView.getBottom() - childView.getTop())/times >= childSize){
+//                times++;
+////                Log.d("layout",times+"");
+//            }
+//
+//            int childLeft = getPaddingLeft();
+//            int childTop = getPaddingTop();
+//            int childRight = childLeft + childView.getRight()/times;
+//            int childBottom = childTop + childView.getBottom()/times;
+//
+////            Log.d("layout",childView.getWidth()+":"+childView.getHeight()+":"+
+////                    childView.getLeft()+":"+childView.getTop()+":"+childView.getRight()+":"+childView.getBottom()+":"+childSize);
+//
+////            Log.d("layout",childLeft+":"+childTop+":"+childRight+":"+childBottom);
+//
+//            childView.layout(childLeft, childTop, childRight, childBottom);
+//
+//            return;
+//        }
+
         int count = adapter.getItemCount();
         int colNum = 3;
         if (count == 4){

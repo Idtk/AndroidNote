@@ -1,4 +1,4 @@
-package com.idtk.androiddemo.widget;
+package com.idtk.NinePhotoView.widget;
 
 import android.view.View;
 
@@ -6,7 +6,7 @@ import android.view.View;
  * Created by Idtk on 2017/3/8.
  */
 
-public class NinePhotoViewHolder {
+public abstract class NinePhotoViewHolder {
     private boolean flag = false;
     private View itemView;
 
