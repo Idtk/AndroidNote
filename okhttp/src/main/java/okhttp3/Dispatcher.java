@@ -126,6 +126,7 @@ public final class Dispatcher {
   synchronized void enqueue(AsyncCall call) {
     if (runningAsyncCalls.size() < maxRequests && runningCallsForHost(call) < maxRequestsPerHost) {
       runningAsyncCalls.add(call);
+      // 执行AsyncCall，AsyncCall拥有runnable接口
       executorService().execute(call);
     } else {
       readyAsyncCalls.add(call);
@@ -150,6 +151,9 @@ public final class Dispatcher {
     }
   }
 
+  /**
+   * 准备列表中的异步回调转移到异步回调的执行列表中
+   */
   private void promoteCalls() {
     if (runningAsyncCalls.size() >= maxRequests) return; // Already running max capacity.
     if (readyAsyncCalls.isEmpty()) return; // No ready calls to promote.
@@ -167,6 +171,9 @@ public final class Dispatcher {
     }
   }
 
+  /**
+   * 同一个host运行的call数量
+   */
   /** Returns the number of running calls that share a host with {@code call}. */
   private int runningCallsForHost(AsyncCall call) {
     int result = 0;

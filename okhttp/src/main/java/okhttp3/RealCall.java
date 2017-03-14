@@ -94,6 +94,9 @@ final class RealCall implements Call {
       executed = true;
     }
     captureCallStackTrace();
+    /**
+     * 如果还可以并发，则增加到异步执行的列表，否则增加到异步执行的准备列表（即缓存这个异步回调）
+     */
     client.dispatcher().enqueue(new AsyncCall(responseCallback));
   }
 
@@ -123,6 +126,7 @@ final class RealCall implements Call {
 
     AsyncCall(Callback responseCallback) {
       super("OkHttp %s", redactedUrl());
+      // 用户填入的callback，用于返回结果的回调
       this.responseCallback = responseCallback;
     }
 
@@ -141,6 +145,7 @@ final class RealCall implements Call {
     @Override protected void execute() {
       boolean signalledCallback = false;
       try {
+        // 拦截器链
         Response response = getResponseWithInterceptorChain();
         if (retryAndFollowUpInterceptor.isCanceled()) {
           signalledCallback = true;
@@ -157,6 +162,7 @@ final class RealCall implements Call {
           responseCallback.onFailure(RealCall.this, e);
         }
       } finally {
+        // 执行完成调用finished，间接调用Dispatcher.promoteCalls()
         client.dispatcher().finished(this);
       }
     }

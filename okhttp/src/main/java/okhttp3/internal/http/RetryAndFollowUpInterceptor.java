@@ -100,15 +100,25 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
     return streamAllocation;
   }
 
+  /**
+   * RealCall中最后执行RealInterceptorChain.proceed方法。
+   * proceed方法将会通用的调用Interceptor.intercept方法
+   * @param chain
+   * @return
+   * @throws IOException
+   */
   @Override public Response intercept(Chain chain) throws IOException {
     Request request = chain.request();
-
+    // 创建StreamAllocation，把Connections、Streams、Calls关联起来
+    // 输入参数：连接池，地址对象，异常回调
     streamAllocation = new StreamAllocation(
         client.connectionPool(), createAddress(request.url()), callStackTrace);
 
     int followUpCount = 0;
     Response priorResponse = null;
+    // 不断循环调用proceed
     while (true) {
+      // 如果取消则释放
       if (canceled) {
         streamAllocation.release();
         throw new IOException("Canceled");
@@ -184,10 +194,16 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
     }
   }
 
+  /**
+   * request url的一个封装
+   * @param url
+   * @return
+   */
   private Address createAddress(HttpUrl url) {
     SSLSocketFactory sslSocketFactory = null;
     HostnameVerifier hostnameVerifier = null;
     CertificatePinner certificatePinner = null;
+    // Https 认证信息
     if (url.isHttps()) {
       sslSocketFactory = client.sslSocketFactory();
       hostnameVerifier = client.hostnameVerifier();
