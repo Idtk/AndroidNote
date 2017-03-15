@@ -193,6 +193,7 @@ public final class CacheStrategy {
         return new CacheStrategy(request, null);
       }
 
+      // 不应该缓存的响应，如果规则不变，这个检查则是多余的
       // If this response shouldn't have been stored, it should never be used
       // as a response source. This check should be redundant as long as the
       // persistence store is well-behaved and the rules are constant.
