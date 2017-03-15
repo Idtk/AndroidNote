@@ -138,8 +138,8 @@ public final class CacheStrategy {
 
     public Factory(long nowMillis, Request request, Response cacheResponse) {
       this.nowMillis = nowMillis;
-      this.request = request;
-      this.cacheResponse = cacheResponse;
+      this.request = request; // 请求
+      this.cacheResponse = cacheResponse; // 响应
 
       if (cacheResponse != null) {
         this.sentRequestMillis = cacheResponse.sentRequestAtMillis();
@@ -179,6 +179,7 @@ public final class CacheStrategy {
       return candidate;
     }
 
+    // 假设可以请求网络的情况下，返回一个策略
     /** Returns a strategy to use assuming the request can use the network. */
     private CacheStrategy getCandidate() {
       // No cached response.
@@ -186,6 +187,7 @@ public final class CacheStrategy {
         return new CacheStrategy(request, null);
       }
 
+      // 未完成握手
       // Drop the cached response if it's missing a required handshake.
       if (request.isHttps() && cacheResponse.handshake() == null) {
         return new CacheStrategy(request, null);

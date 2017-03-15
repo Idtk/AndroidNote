@@ -111,6 +111,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
     Request request = chain.request();
     // 创建StreamAllocation，把Connections、Streams、Calls关联起来
     // 输入参数：连接池，地址对象，异常回调
+    // 其中包含socket
     streamAllocation = new StreamAllocation(
         client.connectionPool(), createAddress(request.url()), callStackTrace);
 
@@ -127,6 +128,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
       Response response = null;
       boolean releaseConnection = true;
       try {
+        // 执行下一个拦截器，即BridgeInterceptor
         response = ((RealInterceptorChain) chain).proceed(request, streamAllocation, null, null);
         releaseConnection = false;
       } catch (RouteException e) {

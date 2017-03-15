@@ -56,18 +56,19 @@ public final class CacheInterceptor implements Interceptor {
 
     long now = System.currentTimeMillis();
 
-    CacheStrategy strategy = new CacheStrategy.Factory(now, chain.request(), cacheCandidate).get();
-    Request networkRequest = strategy.networkRequest;
-    Response cacheResponse = strategy.cacheResponse;
+    CacheStrategy strategy = new CacheStrategy.Factory(now, chain.request(), cacheCandidate).get();// 生成缓存策略
+    Request networkRequest = strategy.networkRequest;// 请求
+    Response cacheResponse = strategy.cacheResponse;// 响应
 
     if (cache != null) {
-      cache.trackResponse(strategy);
+      cache.trackResponse(strategy);//响应追踪
     }
 
     if (cacheCandidate != null && cacheResponse == null) {
       closeQuietly(cacheCandidate.body()); // The cache candidate wasn't applicable. Close it.
     }
 
+    // 禁止网络并且没有响应缓存，则直接返回504
     // If we're forbidden from using the network and the cache is insufficient, fail.
     if (networkRequest == null && cacheResponse == null) {
       return new Response.Builder()
@@ -81,6 +82,7 @@ public final class CacheInterceptor implements Interceptor {
           .build();
     }
 
+    // 不需要网络，直接从返回中获取结果
     // If we don't need the network, we're done.
     if (networkRequest == null) {
       return cacheResponse.newBuilder()
@@ -90,6 +92,7 @@ public final class CacheInterceptor implements Interceptor {
 
     Response networkResponse = null;
     try {
+      // 执行ConnectInterceptor
       networkResponse = chain.proceed(networkRequest);
     } finally {
       // If we're crashing on I/O or otherwise, don't leak the cache body.

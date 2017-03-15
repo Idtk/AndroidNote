@@ -179,7 +179,7 @@ public final class Cache implements Closeable, Flushable {
   }
 
   Cache(File directory, long maxSize, FileSystem fileSystem) {
-    this.cache = DiskLruCache.create(fileSystem, directory, VERSION, ENTRY_COUNT, maxSize);
+    this.cache = DiskLruCache.create(fileSystem, directory, VERSION, ENTRY_COUNT, maxSize);// 创建硬盘缓存
   }
 
   public static String key(HttpUrl url) {
@@ -187,11 +187,11 @@ public final class Cache implements Closeable, Flushable {
   }
 
   Response get(Request request) {
-    String key = key(request.url());
-    DiskLruCache.Snapshot snapshot;
+    String key = key(request.url()); // 根据url获取key
+    DiskLruCache.Snapshot snapshot;// 硬盘缓存快照
     Entry entry;
     try {
-      snapshot = cache.get(key);
+      snapshot = cache.get(key);// 获取硬盘缓存快照
       if (snapshot == null) {
         return null;
       }
@@ -201,7 +201,7 @@ public final class Cache implements Closeable, Flushable {
     }
 
     try {
-      entry = new Entry(snapshot.getSource(ENTRY_METADATA));
+      entry = new Entry(snapshot.getSource(ENTRY_METADATA));// 输入流
     } catch (IOException e) {
       Util.closeQuietly(snapshot);
       return null;
@@ -698,15 +698,16 @@ public final class Cache implements Closeable, Flushable {
           && HttpHeaders.varyMatches(response, varyHeaders, request);
     }
 
+
     public Response response(DiskLruCache.Snapshot snapshot) {
       String contentType = responseHeaders.get("Content-Type");
       String contentLength = responseHeaders.get("Content-Length");
-      Request cacheRequest = new Request.Builder()
+      Request cacheRequest = new Request.Builder() //构造请求
           .url(url)
           .method(requestMethod, null)
           .headers(varyHeaders)
           .build();
-      return new Response.Builder()
+      return new Response.Builder() //构造返回响应
           .request(cacheRequest)
           .protocol(protocol)
           .code(code)

@@ -44,6 +44,12 @@ public final class BridgeInterceptor implements Interceptor {
     this.cookieJar = cookieJar;
   }
 
+  /**
+   * 设置一些头属性
+   * @param chain
+   * @return
+   * @throws IOException
+   */
   @Override public Response intercept(Chain chain) throws IOException {
     Request userRequest = chain.request();
     Request.Builder requestBuilder = userRequest.newBuilder();
@@ -81,6 +87,7 @@ public final class BridgeInterceptor implements Interceptor {
       requestBuilder.header("Accept-Encoding", "gzip");
     }
 
+    // 请求前加载cookie，使用此接口可以用于cookie保持
     List<Cookie> cookies = cookieJar.loadForRequest(userRequest.url());
     if (!cookies.isEmpty()) {
       requestBuilder.header("Cookie", cookieHeader(cookies));
@@ -89,7 +96,7 @@ public final class BridgeInterceptor implements Interceptor {
     if (userRequest.header("User-Agent") == null) {
       requestBuilder.header("User-Agent", Version.userAgent());
     }
-
+    // 执行CacheInterceptor
     Response networkResponse = chain.proceed(requestBuilder.build());
 
     HttpHeaders.receiveHeaders(cookieJar, userRequest.url(), networkResponse.headers());
@@ -112,6 +119,9 @@ public final class BridgeInterceptor implements Interceptor {
     return responseBuilder.build();
   }
 
+  /**
+   * 整理cookie的格式
+   */
   /** Returns a 'Cookie' HTTP request header with all cookies, like {@code a=b; c=d}. */
   private String cookieHeader(List<Cookie> cookies) {
     StringBuilder cookieHeader = new StringBuilder();
