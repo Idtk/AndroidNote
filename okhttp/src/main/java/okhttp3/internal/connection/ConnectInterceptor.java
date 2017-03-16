@@ -41,7 +41,7 @@ public final class ConnectInterceptor implements Interceptor {
     boolean doExtensiveHealthChecks = !request.method().equals("GET");
     HttpCodec httpCodec = streamAllocation.newStream(client, doExtensiveHealthChecks);
     RealConnection connection = streamAllocation.connection();
-
+    // 调用networkInterceptors
     return realChain.proceed(request, streamAllocation, httpCodec, connection);
   }
 }
