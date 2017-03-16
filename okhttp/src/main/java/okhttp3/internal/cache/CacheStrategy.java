@@ -170,7 +170,7 @@ public final class CacheStrategy {
      */
     public CacheStrategy get() {
       CacheStrategy candidate = getCandidate();
-
+      // 无网络，无缓存
       if (candidate.networkRequest != null && request.cacheControl().onlyIfCached()) {
         // We're forbidden from using the network and the cache is insufficient.
         return new CacheStrategy(null, null);
@@ -201,7 +201,7 @@ public final class CacheStrategy {
         return new CacheStrategy(request, null);
       }
 
-      //
+      // 响应换缓存控制器
       CacheControl requestCaching = request.cacheControl();
       if (requestCaching.noCache() || hasConditions(request)) {
         return new CacheStrategy(request, null);
@@ -234,11 +234,16 @@ public final class CacheStrategy {
         if (ageMillis > oneDayMillis && isFreshnessLifetimeHeuristic()) {
           builder.addHeader("Warning", "113 HttpURLConnection \"Heuristic expiration\"");
         }
+        // 缓存在有效时间内
         return new CacheStrategy(null, builder.build());
       }
 
       // Find a condition to add to the request. If the condition is satisfied, the response body
       // will not be transmitted.
+      // Http的Cache机制总共有4个组成部分：
+      // Cache-Control、Last-Modified（If-Modified-Since）、Etag（If-None-Match） 、Expires
+      // 服务器响应头：Last-Modified，Etag
+      // 浏览器请求头：If-Modified-Since，If-None-Match
       String conditionName;
       String conditionValue;
       if (etag != null) {
@@ -251,6 +256,7 @@ public final class CacheStrategy {
         conditionName = "If-Modified-Since";
         conditionValue = servedDateString;
       } else {
+        // 无缓存机制条件，重新请求
         return new CacheStrategy(request, null); // No condition! Make a regular request.
       }
 
@@ -260,6 +266,7 @@ public final class CacheStrategy {
       Request conditionalRequest = request.newBuilder()
           .headers(conditionalRequestHeaders.build())
           .build();
+      // 在一定条件(即包含上述缓存机制的标签)下发送请求
       return new CacheStrategy(conditionalRequest, cacheResponse);
     }
 
