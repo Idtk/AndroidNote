@@ -201,7 +201,7 @@ public final class CacheStrategy {
         return new CacheStrategy(request, null);
       }
 
-      // 响应换缓存控制器
+      // 没有缓存或者自己的缓存策略
       CacheControl requestCaching = request.cacheControl();
       if (requestCaching.noCache() || hasConditions(request)) {
         return new CacheStrategy(request, null);
@@ -266,7 +266,7 @@ public final class CacheStrategy {
       Request conditionalRequest = request.newBuilder()
           .headers(conditionalRequestHeaders.build())
           .build();
-      // 发送请求
+      // 在一定条件(即包含上述缓存机制的标签)下发送请求
       return new CacheStrategy(conditionalRequest, cacheResponse);
     }
 
