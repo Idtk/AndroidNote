@@ -266,7 +266,7 @@ public final class CacheStrategy {
       Request conditionalRequest = request.newBuilder()
           .headers(conditionalRequestHeaders.build())
           .build();
-      // 在一定条件(即包含上述缓存机制的标签)下发送请求
+      // 发送请求
       return new CacheStrategy(conditionalRequest, cacheResponse);
     }
 
