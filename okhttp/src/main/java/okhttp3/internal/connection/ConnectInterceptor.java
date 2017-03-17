@@ -39,8 +39,8 @@ public final class ConnectInterceptor implements Interceptor {
 
     // We need the network to satisfy this request. Possibly for validating a conditional GET.
     boolean doExtensiveHealthChecks = !request.method().equals("GET");
-    HttpCodec httpCodec = streamAllocation.newStream(client, doExtensiveHealthChecks);
-    RealConnection connection = streamAllocation.connection();
+    HttpCodec httpCodec = streamAllocation.newStream(client, doExtensiveHealthChecks);// 获取HTTP编码
+    RealConnection connection = streamAllocation.connection();// 获取上一步从连接池得到的可用或者新建的连接
     // 调用networkInterceptors
     return realChain.proceed(request, streamAllocation, httpCodec, connection);
   }

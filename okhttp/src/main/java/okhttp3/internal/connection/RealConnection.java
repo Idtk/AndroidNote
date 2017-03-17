@@ -383,12 +383,12 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   public HttpCodec newCodec(
       OkHttpClient client, StreamAllocation streamAllocation) throws SocketException {
     if (http2Connection != null) {
-      return new Http2Codec(client, streamAllocation, http2Connection);
+      return new Http2Codec(client, streamAllocation, http2Connection);// HTTP/2 编码
     } else {
       socket.setSoTimeout(client.readTimeoutMillis());
       source.timeout().timeout(client.readTimeoutMillis(), MILLISECONDS);
       sink.timeout().timeout(client.writeTimeoutMillis(), MILLISECONDS);
-      return new Http1Codec(client, streamAllocation, source, sink);
+      return new Http1Codec(client, streamAllocation, source, sink);// HTTP/1.1 编码
     }
   }
 
@@ -419,10 +419,12 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       return false;
     }
 
+    // 如果连接没有结束，则返回true
     if (http2Connection != null) {
       return !http2Connection.isShutdown();
     }
 
+    // 如果不为get
     if (doExtensiveChecks) {
       try {
         int readTimeout = socket.getSoTimeout();
