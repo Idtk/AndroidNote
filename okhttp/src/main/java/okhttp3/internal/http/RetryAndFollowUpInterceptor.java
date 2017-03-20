@@ -146,13 +146,14 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
         continue;
       } finally {
         // We're throwing an unchecked exception. Release any resources.
-        if (releaseConnection) {
+        if (releaseConnection) {// 如果没有释放连接，则手动释放
           streamAllocation.streamFailed(null);
           streamAllocation.release();
         }
       }
 
       // Attach the prior response if it exists. Such responses never have a body.
+      // 如果之前已经获取过响应，则body为null
       if (priorResponse != null) {
         response = response.newBuilder()
             .priorResponse(priorResponse.newBuilder()
@@ -161,9 +162,9 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
             .build();
       }
 
-      Request followUp = followUpRequest(response);
+      Request followUp = followUpRequest(response);// 根据响应码判断是否需要重定向，如需要则返回请求
 
-      if (followUp == null) {
+      if (followUp == null) {// 请求为null，则不需要重定向，返回响应
         if (!forWebSocket) {
           streamAllocation.release();
         }
@@ -191,8 +192,9 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
             + " didn't close its backing stream. Bad interceptor?");
       }
 
-      request = followUp;
-      priorResponse = response;
+      request = followUp;// 重新设置请求
+      priorResponse = response;// 重新设置早先的响应属性
+      // 继续while循环
     }
   }
 

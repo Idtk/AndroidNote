@@ -96,6 +96,7 @@ public final class CacheInterceptor implements Interceptor {
       networkResponse = chain.proceed(networkRequest);
     } finally {
       // If we're crashing on I/O or otherwise, don't leak the cache body.
+      // 无响应与响应缓存
       if (networkResponse == null && cacheCandidate != null) {
         closeQuietly(cacheCandidate.body());
       }
@@ -103,9 +104,9 @@ public final class CacheInterceptor implements Interceptor {
 
     // If we have a cache response too, then we're doing a conditional get.
     if (cacheResponse != null) {
-      if (networkResponse.code() == HTTP_NOT_MODIFIED) {
-        Response response = cacheResponse.newBuilder()
-            .headers(combine(cacheResponse.headers(), networkResponse.headers()))
+      if (networkResponse.code() == HTTP_NOT_MODIFIED) {// 返回304，服务器数据在一定时间段内未更新，并且上次返回的缓存可用
+        Response response = cacheResponse.newBuilder() // 通过响应缓存构造新的返回
+            .headers(combine(cacheResponse.headers(), networkResponse.headers())) // 先添加缓存响应的header键值对，再添加网络响应的header键值对，其中相同的将被覆盖
             .sentRequestAtMillis(networkResponse.sentRequestAtMillis())
             .receivedResponseAtMillis(networkResponse.receivedResponseAtMillis())
             .cacheResponse(stripBody(cacheResponse))
@@ -116,21 +117,22 @@ public final class CacheInterceptor implements Interceptor {
         // Update the cache after combining headers but before stripping the
         // Content-Encoding header (as performed by initContentStream()).
         cache.trackConditionalCacheHit();
-        cache.update(cacheResponse, response);
+        cache.update(cacheResponse, response);// 更新硬盘响应缓存
         return response;
       } else {
         closeQuietly(cacheResponse.body());
       }
     }
 
+    // 没有响应缓存的情况下
     Response response = networkResponse.newBuilder()
         .cacheResponse(stripBody(cacheResponse))
         .networkResponse(stripBody(networkResponse))
         .build();
 
-    if (HttpHeaders.hasBody(response)) {
-      CacheRequest cacheRequest = maybeCache(response, networkResponse.request(), cache);
-      response = cacheWritingResponse(cacheRequest, response);
+    if (HttpHeaders.hasBody(response)) { // 如果需要响应体
+      CacheRequest cacheRequest = maybeCache(response, networkResponse.request(), cache); // 获取缓存请求
+      response = cacheWritingResponse(cacheRequest, response); // 将请求写入响应对象
     }
 
     return response;

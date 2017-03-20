@@ -99,21 +99,21 @@ public final class BridgeInterceptor implements Interceptor {
     // 执行CacheInterceptor
     Response networkResponse = chain.proceed(requestBuilder.build());
 
-    HttpHeaders.receiveHeaders(cookieJar, userRequest.url(), networkResponse.headers());
+    HttpHeaders.receiveHeaders(cookieJar, userRequest.url(), networkResponse.headers());// 保存cookie
 
     Response.Builder responseBuilder = networkResponse.newBuilder()
-        .request(userRequest);
+        .request(userRequest);// 用户请求
 
     if (transparentGzip
         && "gzip".equalsIgnoreCase(networkResponse.header("Content-Encoding"))
         && HttpHeaders.hasBody(networkResponse)) {
-      GzipSource responseBody = new GzipSource(networkResponse.body().source());
+      GzipSource responseBody = new GzipSource(networkResponse.body().source());// 解压body
       Headers strippedHeaders = networkResponse.headers().newBuilder()
           .removeAll("Content-Encoding")
           .removeAll("Content-Length")
           .build();
       responseBuilder.headers(strippedHeaders);
-      responseBuilder.body(new RealResponseBody(strippedHeaders, Okio.buffer(responseBody)));
+      responseBuilder.body(new RealResponseBody(strippedHeaders, Okio.buffer(responseBody)));// 转换为用户友好的body
     }
 
     return responseBuilder.build();
