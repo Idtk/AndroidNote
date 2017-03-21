@@ -88,7 +88,7 @@ public final class RealInterceptorChain implements Interceptor.Chain {
     // Call the next interceptor in the chain.
     RealInterceptorChain next = new RealInterceptorChain(
         interceptors, streamAllocation, httpCodec, connection, index + 1, request);
-    Interceptor interceptor = interceptors.get(index);
+    Interceptor interceptor = interceptors.get(index);// 获取拦截器
     Response response = interceptor.intercept(next);
 
     // Confirm that the next interceptor made its required call to chain.proceed().

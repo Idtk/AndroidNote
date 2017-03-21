@@ -108,6 +108,7 @@ public final class Request {
 
     /**
      * 默认请求方法和请求头
+     * 默认get方法
      */
     public Builder() {
       this.method = "GET";
@@ -203,6 +204,7 @@ public final class Request {
      * Sets this request's {@code Cache-Control} header, replacing any cache control headers already
      * present. If {@code cacheControl} doesn't define any directives, this clears this request's
      * cache-control headers.
+     * 缓存策略
      */
     public Builder cacheControl(CacheControl cacheControl) {
       String value = cacheControl.toString();
@@ -246,10 +248,10 @@ public final class Request {
     public Builder method(String method, RequestBody body) {
       if (method == null) throw new NullPointerException("method == null");
       if (method.length() == 0) throw new IllegalArgumentException("method.length() == 0");
-      if (body != null && !HttpMethod.permitsRequestBody(method)) {
+      if (body != null && !HttpMethod.permitsRequestBody(method)) {// 不允许有body
         throw new IllegalArgumentException("method " + method + " must not have a request body.");
       }
-      if (body == null && HttpMethod.requiresRequestBody(method)) {
+      if (body == null && HttpMethod.requiresRequestBody(method)) {// 必须有body
         throw new IllegalArgumentException("method " + method + " must have a request body.");
       }
       this.method = method;

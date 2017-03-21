@@ -185,7 +185,7 @@ public final class CacheInterceptor implements Interceptor {
       @Override public long read(Buffer sink, long byteCount) throws IOException {
         long bytesRead;
         try {
-          bytesRead = source.read(sink, byteCount);
+          bytesRead = source.read(sink, byteCount);// 最终调用inputStream.read
         } catch (IOException e) {
           if (!cacheRequestClosed) {
             cacheRequestClosed = true;

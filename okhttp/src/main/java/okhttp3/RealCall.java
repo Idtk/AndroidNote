@@ -72,7 +72,7 @@ final class RealCall implements Call {
     captureCallStackTrace();
     try {
       client.dispatcher().executed(this);
-      Response result = getResponseWithInterceptorChain();
+      Response result = getResponseWithInterceptorChain();// 拦截器链
       if (result == null) throw new IOException("Canceled");
       return result;
     } finally {
@@ -85,7 +85,7 @@ final class RealCall implements Call {
    */
   private void captureCallStackTrace() {
     Object callStackTrace = Platform.get().getStackTraceForCloseable("response.body().close()");
-    retryAndFollowUpInterceptor.setCallStackTrace(callStackTrace);
+    retryAndFollowUpInterceptor.setCallStackTrace(callStackTrace);// 重定向拦截器，设置异常捕获
   }
 
   @Override public void enqueue(Callback responseCallback) {
@@ -147,7 +147,7 @@ final class RealCall implements Call {
       try {
         // 拦截器链
         Response response = getResponseWithInterceptorChain();
-        if (retryAndFollowUpInterceptor.isCanceled()) {
+        if (retryAndFollowUpInterceptor.isCanceled()) {// 连接已取消，连接失败
           signalledCallback = true;
           responseCallback.onFailure(RealCall.this, new IOException("Canceled"));
         } else {
@@ -159,7 +159,7 @@ final class RealCall implements Call {
           // Do not signal the callback twice!
           Platform.get().log(INFO, "Callback failure for " + toLoggableString(), e);
         } else {
-          responseCallback.onFailure(RealCall.this, e);
+          responseCallback.onFailure(RealCall.this, e);// 在读写时取消会引起IO异常
         }
       } finally {
         // 执行完成调用finished，间接调用Dispatcher.promoteCalls()

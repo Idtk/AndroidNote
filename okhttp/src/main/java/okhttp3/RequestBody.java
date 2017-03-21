@@ -37,6 +37,7 @@ public abstract class RequestBody {
   }
 
   /** Writes the content of this request to {@code out}. */
+  // BufferedSink的实现类为RealBufferedSink
   public abstract void writeTo(BufferedSink sink) throws IOException;
 
   /**
@@ -93,7 +94,8 @@ public abstract class RequestBody {
       }
 
       @Override public void writeTo(BufferedSink sink) throws IOException {
-        sink.write(content, offset, byteCount);
+        sink.write(content, offset, byteCount);// 字节码写入缓冲区
+        // 最终调用OutputStream.write
       }
     };
   }
@@ -114,8 +116,8 @@ public abstract class RequestBody {
       @Override public void writeTo(BufferedSink sink) throws IOException {
         Source source = null;
         try {
-          source = Okio.source(file);
-          sink.writeAll(source);
+          source = Okio.source(file);// 读取文件
+          sink.writeAll(source);// 写入
         } finally {
           Util.closeQuietly(source);
         }

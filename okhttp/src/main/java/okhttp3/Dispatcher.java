@@ -30,6 +30,7 @@ import okhttp3.internal.Util;
 
 /**
  * Policy on when async requests are executed.
+ * 异步请求的分配执行，其实也包括了同步请求
  *
  * <p>Each dispatcher uses an {@link ExecutorService} to run calls internally. If you supply your
  * own executor, it should be able to run {@linkplain #getMaxRequests the configured maximum} number
@@ -184,6 +185,7 @@ public final class Dispatcher {
   }
 
   /** Used by {@code Call#execute} to signal it is in-flight. */
+  // 增加到同步执行的回调队列
   synchronized void executed(RealCall call) {
     runningSyncCalls.add(call);
   }
@@ -203,7 +205,7 @@ public final class Dispatcher {
     Runnable idleCallback;
     synchronized (this) {
       if (!calls.remove(call)) throw new AssertionError("Call wasn't in-flight!");
-      if (promoteCalls) promoteCalls();
+      if (promoteCalls) promoteCalls();// 去调用异步回调队列执行
       runningCallsCount = runningCallsCount();
       idleCallback = this.idleCallback;
     }

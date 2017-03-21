@@ -59,8 +59,8 @@ public final class CallServerInterceptor implements Interceptor {
       if (responseBuilder == null) {
         Sink requestBodyOut = httpCodec.createRequestBody(request, request.body().contentLength());
         BufferedSink bufferedRequestBody = Okio.buffer(requestBodyOut);// 新建缓冲区
-        request.body().writeTo(bufferedRequestBody);// 写入请求体
-        bufferedRequestBody.close();// 完成请求体
+        request.body().writeTo(bufferedRequestBody);// 缓存区的请求体写入请求
+        bufferedRequestBody.close();// 关闭请求体缓冲区
       }
     }
 

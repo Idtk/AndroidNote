@@ -145,20 +145,21 @@ public final class CacheStrategy {
         this.sentRequestMillis = cacheResponse.sentRequestAtMillis();
         this.receivedResponseMillis = cacheResponse.receivedResponseAtMillis();
         Headers headers = cacheResponse.headers();
+        // 解析响应缓存header
         for (int i = 0, size = headers.size(); i < size; i++) {
           String fieldName = headers.name(i);
           String value = headers.value(i);
-          if ("Date".equalsIgnoreCase(fieldName)) {
+          if ("Date".equalsIgnoreCase(fieldName)) {// Date
             servedDate = HttpDate.parse(value);
             servedDateString = value;
-          } else if ("Expires".equalsIgnoreCase(fieldName)) {
+          } else if ("Expires".equalsIgnoreCase(fieldName)) {// Expires
             expires = HttpDate.parse(value);
-          } else if ("Last-Modified".equalsIgnoreCase(fieldName)) {
+          } else if ("Last-Modified".equalsIgnoreCase(fieldName)) {// If-Modified-Since
             lastModified = HttpDate.parse(value);
             lastModifiedString = value;
-          } else if ("ETag".equalsIgnoreCase(fieldName)) {
+          } else if ("ETag".equalsIgnoreCase(fieldName)) {// If-None-Match
             etag = value;
-          } else if ("Age".equalsIgnoreCase(fieldName)) {
+          } else if ("Age".equalsIgnoreCase(fieldName)) {// 存活时间
             ageSeconds = HttpHeaders.parseSeconds(value, -1);
           }
         }
@@ -180,6 +181,8 @@ public final class CacheStrategy {
     }
 
     // 假设可以请求网络的情况下，返回一个策略
+    // Http的Cache机制总共有4个组成部分：
+    // Cache-Control、Last-Modified（If-Modified-Since）、Etag（If-None-Match） 、Expires
     /** Returns a strategy to use assuming the request can use the network. */
     private CacheStrategy getCandidate() {
       // No cached response.
@@ -201,7 +204,8 @@ public final class CacheStrategy {
         return new CacheStrategy(request, null);
       }
 
-      // 没有缓存或者自己的缓存策略
+      // Cache-Control为no-cache|| If-Modified-Since || If-None-Match
+      // 携带验证信息发送到服务器，检查响应在上一次访问后是否更新，如果更新则返回200，否则为304
       CacheControl requestCaching = request.cacheControl();
       if (requestCaching.noCache() || hasConditions(request)) {
         return new CacheStrategy(request, null);
@@ -210,17 +214,17 @@ public final class CacheStrategy {
       long ageMillis = cacheResponseAge();
       long freshMillis = computeFreshnessLifetime();
 
-      if (requestCaching.maxAgeSeconds() != -1) {
+      if (requestCaching.maxAgeSeconds() != -1) {// max-age 响应被重用的最长时间
         freshMillis = Math.min(freshMillis, SECONDS.toMillis(requestCaching.maxAgeSeconds()));
       }
 
       long minFreshMillis = 0;
-      if (requestCaching.minFreshSeconds() != -1) {
+      if (requestCaching.minFreshSeconds() != -1) {// min-fresh 可容忍的最小新鲜度，即client不接受超过了当前age与min-fresh时间之合的响应
         minFreshMillis = SECONDS.toMillis(requestCaching.minFreshSeconds());
       }
 
       long maxStaleMillis = 0;
-      CacheControl responseCaching = cacheResponse.cacheControl();
+      CacheControl responseCaching = cacheResponse.cacheControl();// max-stale 过时时间，资源过期时间小于此值，则可以接收
       if (!responseCaching.mustRevalidate() && requestCaching.maxStaleSeconds() != -1) {
         maxStaleMillis = SECONDS.toMillis(requestCaching.maxStaleSeconds());
       }
@@ -240,8 +244,6 @@ public final class CacheStrategy {
 
       // Find a condition to add to the request. If the condition is satisfied, the response body
       // will not be transmitted.
-      // Http的Cache机制总共有4个组成部分：
-      // Cache-Control、Last-Modified（If-Modified-Since）、Etag（If-None-Match） 、Expires
       // 服务器响应头：Last-Modified，Etag
       // 浏览器请求头：If-Modified-Since，If-None-Match
       String conditionName;
@@ -266,7 +268,8 @@ public final class CacheStrategy {
       Request conditionalRequest = request.newBuilder()
           .headers(conditionalRequestHeaders.build())
           .build();
-      // 在一定条件(即包含上述缓存机制的标签)下发送请求
+      // 已经从服务器获取Last-Modified或者ETag的情况下，对于相同address则携带If-Modified-Since或If-None-Match发送请求
+      // 即已经从服务器获得过一次响应，第二次发送时，携带上次返回的验证信息（如时间）一起发送给服务器
       return new CacheStrategy(conditionalRequest, cacheResponse);
     }
 
