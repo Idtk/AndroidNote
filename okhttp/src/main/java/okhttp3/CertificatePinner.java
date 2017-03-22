@@ -124,6 +124,11 @@ import static okhttp3.internal.Util.equal;
  * @see <a href="https://www.owasp.org/index.php/Certificate_and_Public_Key_Pinning"> OWASP:
  * Certificate and Public Key Pinning</a>
  */
+
+/**
+ * 证书颁发机构使用指纹保护证书不被攻击，也可以防止证书的中间人攻击
+ * hostname的指纹检查
+ */
 public final class CertificatePinner {
   public static final CertificatePinner DEFAULT = new Builder().build();
 

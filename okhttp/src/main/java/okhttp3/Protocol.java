@@ -26,6 +26,10 @@ import java.io.IOException;
  * (http/1.1, spdy/3.1, etc.). OkHttp uses the word <i>protocol</i> to identify how HTTP messages
  * are framed.
  */
+
+/**
+ * okhttp使用的网络传输协议
+ */
 public enum Protocol {
   /**
    * An obsolete plaintext framing that does not use persistent sockets by default.

@@ -58,6 +58,10 @@ import java.io.IOException;
  * <p>Applications may configure OkHttp with an authenticator for origin servers, or proxy servers,
  * or both.
  */
+/**
+ * HTTP请求头属性Authorization
+ * 同时响应头中也有对应属性WWW-Authorization
+ */
 public interface Authenticator {
   /** An authenticator that knows no credentials and makes no attempt to authenticate. */
   Authenticator NONE = new Authenticator() {

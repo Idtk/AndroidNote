@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentMap;
  * <p>See also <a href="https://android.googlesource.com/platform/external/conscrypt/+/master/src/main/java/org/conscrypt/NativeCrypto.java">NativeCrypto.java</a>
  * from conscrypt, which lists the cipher suites supported by Android.
  */
+// TLS 加密方式族
 public final class CipherSuite {
   /**
    * Holds interned instances. This needs to be above the of() calls below so that it's

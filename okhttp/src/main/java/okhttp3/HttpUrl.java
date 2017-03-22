@@ -281,6 +281,12 @@ import static okhttp3.internal.Util.skipTrailingAsciiWhitespace;
  * returns null if the input is an invalid URL. You can even be explicit about whether each
  * component has been encoded already.
  */
+
+/**
+ * 用于http或者https请求的url
+ * scheme、域名、uri、端口、用户名及密码参数
+ * url的编码
+ */
 public final class HttpUrl {
   private static final char[] HEX_DIGITS =
       {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};

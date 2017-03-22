@@ -468,14 +468,14 @@ public class OkHttpClient implements Cloneable, Call.Factory, WebSocket.Factory 
     public Builder() {
       dispatcher = new Dispatcher();// 分发类
       protocols = DEFAULT_PROTOCOLS;// 协议
-      connectionSpecs = DEFAULT_CONNECTION_SPECS;// HTTP连接安全性
+      connectionSpecs = DEFAULT_CONNECTION_SPECS;// 指定连接的安全协议
       proxySelector = ProxySelector.getDefault();// 代理选择器
       cookieJar = CookieJar.NO_COOKIES;// Cookie
-      socketFactory = SocketFactory.getDefault();
+      socketFactory = SocketFactory.getDefault();// 一个默认的socket副本
       hostnameVerifier = OkHostnameVerifier.INSTANCE;// Hostname验证，符合RFC 2818
-      certificatePinner = CertificatePinner.DEFAULT;// 证书
+      certificatePinner = CertificatePinner.DEFAULT;// 指纹证书
       proxyAuthenticator = Authenticator.NONE;// 代理认证
-      authenticator = Authenticator.NONE;// 认证
+      authenticator = Authenticator.NONE;// 身份认证
       connectionPool = new ConnectionPool();// 连接池
       dns = Dns.SYSTEM;// DNS
       followSslRedirects = true;// SSL重定向

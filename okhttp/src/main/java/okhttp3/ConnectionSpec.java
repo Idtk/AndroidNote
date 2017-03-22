@@ -37,6 +37,10 @@ import static okhttp3.internal.Util.intersect;
  * <p>Use {@link Builder#allEnabledTlsVersions()} and {@link Builder#allEnabledCipherSuites} to
  * defer all feature selection to the underlying SSL socket.
  */
+
+/**
+ * TLS（传输层安全协议）加密方式
+ */
 public final class ConnectionSpec {
 
   // This is nearly equal to the cipher suites supported in Chrome 51, current as of 2016-05-25.
