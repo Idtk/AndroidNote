@@ -33,12 +33,14 @@ import okhttp3.internal.Util;
 /**
  * Selects routes to connect to an origin server. Each connection requires a choice of proxy server,
  * IP address, and TLS mode. Connections may also be recycled.
+ * 连接原始服务器的路由（代理、IP、HTTPS）选择和回收
  */
 public final class RouteSelector {
   private final Address address;
   private final RouteDatabase routeDatabase;
 
   /* The most recently attempted route. */
+  // 最近使用的路由配置
   private Proxy lastProxy;
   private InetSocketAddress lastInetSocketAddress;
 
@@ -57,6 +59,7 @@ public final class RouteSelector {
     this.address = address;
     this.routeDatabase = routeDatabase;
 
+    // 重置代理
     resetNextProxy(address.url(), address.proxy());
   }
 
@@ -69,6 +72,7 @@ public final class RouteSelector {
         || hasNextPostponed();
   }
 
+  // 返回一个可用的路由
   public Route next() throws IOException {
     // Compute the next route to attempt.
     if (!hasNextInetSocketAddress()) {
@@ -83,7 +87,7 @@ public final class RouteSelector {
     lastInetSocketAddress = nextInetSocketAddress();
 
     Route route = new Route(address, lastProxy, lastInetSocketAddress);
-    if (routeDatabase.shouldPostpone(route)) {
+    if (routeDatabase.shouldPostpone(route)) {// 如果失败记录中包含这个路由
       postponedRoutes.add(route);
       // We will only recurse in order to skip previously failed routes. They will be tried last.
       return next();
@@ -95,6 +99,7 @@ public final class RouteSelector {
   /**
    * Clients should invoke this method when they encounter a connectivity failure on a connection
    * returned by this route selector.
+   * 保存失败的路由、代理
    */
   public void connectFailed(Route failedRoute, IOException failure) {
     if (failedRoute.proxy().type() != Proxy.Type.DIRECT && address.proxySelector() != null) {
@@ -107,6 +112,7 @@ public final class RouteSelector {
   }
 
   /** Prepares the proxy servers to try. */
+  /**将使用的代理*/
   private void resetNextProxy(HttpUrl url, Proxy proxy) {
     if (proxy != null) {
       // If the user specifies a proxy, try that and only that.
@@ -138,12 +144,14 @@ public final class RouteSelector {
   }
 
   /** Prepares the socket addresses to attempt for the current proxy or host. */
+  /**检查是否可以使用socket连接代理或者主机**/
   private void resetNextInetSocketAddress(Proxy proxy) throws IOException {
     // Clear the addresses. Necessary if getAllByName() below throws!
     inetSocketAddresses = new ArrayList<>();
 
     String socketHost;
     int socketPort;
+    // 直连代理或者socket代理
     if (proxy.type() == Proxy.Type.DIRECT || proxy.type() == Proxy.Type.SOCKS) {
       socketHost = address.url().host();
       socketPort = address.url().port();
@@ -180,6 +188,7 @@ public final class RouteSelector {
   /**
    * Obtain a "host" from an {@link InetSocketAddress}. This returns a string containing either an
    * actual host name or a numeric IP address.
+   * 从InetSocketAddress获取域名或者地址
    */
   // Visible for testing
   static String getHostString(InetSocketAddress socketAddress) {

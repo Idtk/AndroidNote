@@ -200,7 +200,8 @@ public final class StreamAllocation {
 
       // If another multiplexed connection to the same address was created concurrently, then
       // release this connection and acquire that one.
-      if (result.isMultiplexed()) { // 如果与另一个多路复用连接拥有相同的address
+      // 如果同时创建了两个address相同的连接，则使用后一个
+      if (result.isMultiplexed()) { // 如果连接多路复用
         socket = Internal.instance.deduplicate(connectionPool, address, this); // 释放这个链接
         result = connection;
       }

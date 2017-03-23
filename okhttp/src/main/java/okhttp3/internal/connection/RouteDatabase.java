@@ -24,6 +24,7 @@ import okhttp3.Route;
  * used so that OkHttp can learn from its mistakes: if there was a failure attempting to connect to
  * a specific IP address or proxy server, that failure is remembered and alternate routes are
  * preferred.
+ * 失败的路由记录和操作
  */
 public final class RouteDatabase {
   private final Set<Route> failedRoutes = new LinkedHashSet<>();

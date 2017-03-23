@@ -32,6 +32,10 @@ import java.net.Proxy;
  * </ul>
  *
  * <p>Each route is a specific selection of these options.
+ *
+ * 连接到原始服务器的路由
+ * 包含代理和IP两个属性
+ * 有可能有多个代理或者多个IP解析结果，来进行选择
  */
 public final class Route {
   final Address address;
@@ -74,6 +78,10 @@ public final class Route {
   /**
    * Returns true if this route tunnels HTTPS through an HTTP proxy. See <a
    * href="http://www.ietf.org/rfc/rfc2817.txt">RFC 2817, Section 5.2</a>.
+   */
+  /**
+   * 一个HTTPS请求通过HTTP协议(透明)代理
+   * @return
    */
   public boolean requiresTunnel() {
     return address.sslSocketFactory != null && proxy.type() == Proxy.Type.HTTP;
