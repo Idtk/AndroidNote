@@ -188,7 +188,7 @@ public final class StreamAllocation {
       if (canceled) throw new IOException("Canceled");
     }
 
-    // TLS 阻塞操作 （即给加密连接）
+    // TLS握手 即HTTPS的SSL
     // Do TCP + TLS handshakes. This is a blocking operation.
     result.connect(connectTimeout, readTimeout, writeTimeout, connectionRetryEnabled);
     routeDatabase().connected(result.route());

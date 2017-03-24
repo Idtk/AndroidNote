@@ -35,7 +35,7 @@ import static okhttp3.internal.Util.equal;
  * <p>HTTP requests that share the same {@code Address} may also share the same {@link Connection}.
  *
  * 连接服务器的地址规范
- * uri、端口、身份认证、指纹证书、数字签名认证、代理、代理选择器、http/https、DNS、协议、连接方式
+ * uri、端口、身份认证、指纹证书、域名认证、代理、代理选择器、http/https、DNS、协议、连接方式
  */
 public final class Address {
   final HttpUrl url;

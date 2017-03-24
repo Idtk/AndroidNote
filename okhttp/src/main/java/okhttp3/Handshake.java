@@ -32,10 +32,10 @@ import okhttp3.internal.Util;
  * for new handshakes.
  */
 public final class Handshake {
-  private final TlsVersion tlsVersion;
-  private final CipherSuite cipherSuite;
-  private final List<Certificate> peerCertificates;
-  private final List<Certificate> localCertificates;
+  private final TlsVersion tlsVersion; // 版本
+  private final CipherSuite cipherSuite; // 密码套件
+  private final List<Certificate> peerCertificates; // 远端证书
+  private final List<Certificate> localCertificates; // 本地证书
 
   private Handshake(TlsVersion tlsVersion, CipherSuite cipherSuite,
       List<Certificate> peerCertificates, List<Certificate> localCertificates) {
@@ -45,6 +45,11 @@ public final class Handshake {
     this.localCertificates = localCertificates;
   }
 
+  /**
+   * 获取HTTPS回话中的参数，新建握手
+   * @param session
+   * @return
+   */
   public static Handshake get(SSLSession session) {
     String cipherSuiteString = session.getCipherSuite();
     if (cipherSuiteString == null) throw new IllegalStateException("cipherSuite == null");

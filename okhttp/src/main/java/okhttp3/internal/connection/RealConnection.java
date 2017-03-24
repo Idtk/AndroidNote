@@ -82,9 +82,9 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   private Socket socket;
   private Handshake handshake;
   private Protocol protocol;
-  private Http2Connection http2Connection;
-  private BufferedSource source;
-  private BufferedSink sink;
+  private Http2Connection http2Connection; // HTTP2的Socket连接
+  private BufferedSource source; // 最终调用InputStream
+  private BufferedSink sink; // 最终调用OutputStream
 
   // The fields below track connection state and are guarded by connectionPool.
 
@@ -100,6 +100,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   public int allocationLimit = 1;
 
   /** Current streams carried by this connection. */
+  /**当前连接分配的stream数，即多路复用技术**/
   public final List<Reference<StreamAllocation>> allocations = new ArrayList<>();
 
   /** Nanotime timestamp when {@code allocations.size()} reached zero. */
