@@ -856,6 +856,7 @@ public final class Http2Connection implements Closeable {
   }
 
   /** Listener of streams and settings initiated by the peer. */
+  /**监听响应流*/
   public abstract static class Listener {
     public static final Listener REFUSE_INCOMING_STREAMS = new Listener() {
       @Override public void onStream(Http2Stream stream) throws IOException {

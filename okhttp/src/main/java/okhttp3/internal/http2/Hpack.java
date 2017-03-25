@@ -38,6 +38,10 @@ import okio.Source;
  * entries are added to the array, starting in the last position moving forward.  When the array
  * fills, it is doubled.
  */
+
+/**
+ * HPACK 对HTTP2头进行压缩
+ */
 final class Hpack {
   private static final int PREFIX_4_BITS = 0x0f;
   private static final int PREFIX_5_BITS = 0x1f;

@@ -46,7 +46,7 @@ import static okhttp3.internal.http2.Http2.illegalArgument;
 final class Http2Writer implements Closeable {
   private static final Logger logger = Logger.getLogger(Http2.class.getName());
 
-  private final BufferedSink sink;
+  private final BufferedSink sink;// OutputStream
   private final boolean client;
   private final Buffer hpackBuffer;
   private int maxFrameSize;

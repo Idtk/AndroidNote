@@ -20,6 +20,10 @@ import okio.ByteString;
 
 import static okhttp3.internal.Util.format;
 
+/**
+ * 这是一个HTTP2协议名和HTTP2标志字符的转换类
+ */
+
 public final class Http2 {
   static final ByteString CONNECTION_PREFACE
       = ByteString.encodeUtf8("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n");
@@ -64,6 +68,9 @@ public final class Http2 {
   /**
    * Lookup table for valid flags for DATA, HEADERS, CONTINUATION. Invalid combinations are
    * represented in binary.
+   */
+  /**
+   * 装填FLAGS，空位0补全
    */
   static final String[] FLAGS = new String[0x40]; // Highest bit flag is 0x20.
   static final String[] BINARY = new String[256];
@@ -131,6 +138,7 @@ public final class Http2 {
    * }
    * </pre>
    */
+  /**讲选择的HTTP2协议名，转换成带方向的16进制数*/
   static String frameLog(boolean inbound, int streamId, int length, byte type, byte flags) {
     String formattedType = type < FRAME_NAMES.length ? FRAME_NAMES[type] : format("0x%02x", type);
     String formattedFlags = formatFlags(type, flags);
@@ -142,6 +150,7 @@ public final class Http2 {
    * Looks up valid string representing flags from the table. Invalid combinations are represented
    * in binary.
    */
+  /**通过type、flags 查找对应的16进制字符*/
   // Visible for testing.
   static String formatFlags(byte type, byte flags) {
     if (flags == 0) return "";
