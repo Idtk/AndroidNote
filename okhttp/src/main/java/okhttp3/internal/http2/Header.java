@@ -19,6 +19,7 @@ import okhttp3.internal.Util;
 import okio.ByteString;
 
 /** HTTP header: the name is an ASCII string, but the value can be UTF-8. */
+/** HTTP header类，属性名为 ASCII encoding，属性值为 UTF-8 encoding */
 public final class Header {
   // Special header names defined in HTTP/2 spec.
   public static final ByteString PSEUDO_PREFIX = ByteString.encodeUtf8(":");

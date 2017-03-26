@@ -40,7 +40,7 @@ import okio.Source;
  */
 
 /**
- * HPACK 对HTTP2头进行压缩
+ * HPACK用于对HTTP2头进行压缩
  */
 final class Hpack {
   private static final int PREFIX_4_BITS = 0x0f;
@@ -48,6 +48,7 @@ final class Hpack {
   private static final int PREFIX_6_BITS = 0x3f;
   private static final int PREFIX_7_BITS = 0x7f;
 
+  /**已存在的HTTP header 索引*/
   static final Header[] STATIC_HEADER_TABLE = new Header[] {
       new Header(Header.TARGET_AUTHORITY, ""),
       new Header(Header.TARGET_METHOD, "GET"),
@@ -116,10 +117,11 @@ final class Hpack {
   }
 
   // http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-12#section-3.1
+  /**对HTTP header信息进行解码*/
   static final class Reader {
 
-    private final List<Header> headerList = new ArrayList<>();
-    private final BufferedSource source;
+    private final List<Header> headerList = new ArrayList<>(); // HTTP header
+    private final BufferedSource source; // InputStream
 
     private final int headerTableSizeSetting;
     private int maxDynamicTableByteCount;
@@ -163,6 +165,7 @@ final class Hpack {
     }
 
     /** Returns the count of entries evicted. */
+    /** 要去除的header属性尺寸 */
     private int evictToRecoverBytes(int bytesToRecover) {
       int entriesToEvict = 0;
       if (bytesToRecover > 0) {
@@ -189,15 +192,15 @@ final class Hpack {
         int b = source.readByte() & 0xff;
         if (b == 0x80) { // 10000000
           throw new IOException("index == 0");
-        } else if ((b & 0x80) == 0x80) { // 1NNNNNNN
+        } else if ((b & 0x80) == 0x80) { // 1NNNNNNN header属性有name、value
           int index = readInt(b, PREFIX_7_BITS);
           readIndexedHeader(index - 1);
-        } else if (b == 0x40) { // 01000000
+        } else if (b == 0x40) { // 01000000 header属性，需要新设置name、value，向动态表中插入新name、value
           readLiteralHeaderWithIncrementalIndexingNewName();
-        } else if ((b & 0x40) == 0x40) {  // 01NNNNNN
+        } else if ((b & 0x40) == 0x40) {  // 01NNNNNN header属性有name，需要新设置value，向动态表中插入新name
           int index = readInt(b, PREFIX_6_BITS);
           readLiteralHeaderWithIncrementalIndexingIndexedName(index - 1);
-        } else if ((b & 0x20) == 0x20) {  // 001NNNNN
+        } else if ((b & 0x20) == 0x20) {  // 001NNNNN // 修改动态表的最大尺寸
           maxDynamicTableByteCount = readInt(b, PREFIX_5_BITS);
           if (maxDynamicTableByteCount < 0
               || maxDynamicTableByteCount > headerTableSizeSetting) {
@@ -205,8 +208,10 @@ final class Hpack {
           }
           adjustDynamicTableByteCount();
         } else if (b == 0x10 || b == 0) { // 000?0000 - Ignore never indexed bit.
+          // header属性，需要新设置name、value，不插入动态表
           readLiteralHeaderWithoutIndexingNewName();
         } else { // 000?NNNN - Ignore never indexed bit.
+          // header属性有name，需要新设置value，不插入动态表
           int index = readInt(b, PREFIX_4_BITS);
           readLiteralHeaderWithoutIndexingIndexedName(index - 1);
         }
@@ -219,11 +224,12 @@ final class Hpack {
       return result;
     }
 
+    /** HTTP header 增加索引对应的属性 */
     private void readIndexedHeader(int index) throws IOException {
-      if (isStaticHeader(index)) {
+      if (isStaticHeader(index)) { // 静态索引表中
         Header staticEntry = STATIC_HEADER_TABLE[index];
         headerList.add(staticEntry);
-      } else {
+      } else { // 动态索引表中获取
         int dynamicTableIndex = dynamicTableIndex(index - STATIC_HEADER_TABLE.length);
         if (dynamicTableIndex < 0 || dynamicTableIndex > dynamicTable.length - 1) {
           throw new IOException("Header index too large " + (index + 1));
@@ -233,6 +239,7 @@ final class Hpack {
     }
 
     // referencedHeaders is relative to nextHeaderIndex + 1.
+    /** 将索引值转换为动态表的索引值 */
     private int dynamicTableIndex(int index) {
       return nextHeaderIndex + 1 + index;
     }
@@ -275,15 +282,17 @@ final class Hpack {
     }
 
     /** index == -1 when new. */
+    /** 设置新的属性键值对 */
     private void insertIntoDynamicTable(int index, Header entry) {
-      headerList.add(entry);
+      headerList.add(entry);// 增加到 HTTP header
 
       int delta = entry.hpackSize;
       if (index != -1) { // Index -1 == new header.
-        delta -= dynamicTable[dynamicTableIndex(index)].hpackSize;
+        delta -= dynamicTable[dynamicTableIndex(index)].hpackSize;// 减去索引的尺寸
       }
 
       // if the new or replacement header is too big, drop all entries.
+      // 清空动态表
       if (delta > maxDynamicTableByteCount) {
         clearDynamicTable();
         return;
@@ -291,45 +300,45 @@ final class Hpack {
 
       // Evict headers to the required length.
       int bytesToRecover = (dynamicTableByteCount + delta) - maxDynamicTableByteCount;
-      int entriesEvicted = evictToRecoverBytes(bytesToRecover);
+      int entriesEvicted = evictToRecoverBytes(bytesToRecover); // 清除尺寸
 
       if (index == -1) { // Adding a value to the dynamic table.
         if (headerCount + 1 > dynamicTable.length) { // Need to grow the dynamic table.
-          Header[] doubled = new Header[dynamicTable.length * 2];
+          Header[] doubled = new Header[dynamicTable.length * 2];// 增大动态表
           System.arraycopy(dynamicTable, 0, doubled, dynamicTable.length, dynamicTable.length);
           nextHeaderIndex = dynamicTable.length - 1;
           dynamicTable = doubled;
         }
         index = nextHeaderIndex--;
-        dynamicTable[index] = entry;
+        dynamicTable[index] = entry; // 加入动态表
         headerCount++;
       } else { // Replace value at same position.
         index += dynamicTableIndex(index) + entriesEvicted;
-        dynamicTable[index] = entry;
+        dynamicTable[index] = entry;// 替换原有的属性
       }
       dynamicTableByteCount += delta;
     }
 
     private int readByte() throws IOException {
-      return source.readByte() & 0xff;
+      return source.readByte() & 0xff;// 读一个字节
     }
 
     int readInt(int firstByte, int prefixMask) throws IOException {
-      int prefix = firstByte & prefixMask;
+      int prefix = firstByte & prefixMask;// 去除标志位
       if (prefix < prefixMask) {
-        return prefix; // This was a single byte value.
+        return prefix; // This was a single byte value.// 单字节
       }
 
-      // This is a multibyte value. Read 7 bits at a time.
+      // This is a multibyte value. Read 7 bits at a time. 多字节，重新切割
       int result = prefixMask;
       int shift = 0;
       while (true) {
         int b = readByte();
-        if ((b & 0x80) != 0) { // Equivalent to (b >= 128) since b is in [0..255].
-          result += (b & 0x7f) << shift;
-          shift += 7;
+        if ((b & 0x80) != 0) { // Equivalent to (b >= 128) since b is in [0..255].最高位不为0
+          result += (b & 0x7f) << shift;// 取后7位
+          shift += 7; // 移动的位数，每次增加7
         } else {
-          result += b << shift; // Last byte.
+          result += b << shift; // Last byte.最后一字节
           break;
         }
       }
@@ -337,6 +346,7 @@ final class Hpack {
     }
 
     /** Reads a potentially Huffman encoded byte string. */
+    /**读霍夫曼编码*/
     ByteString readByteString() throws IOException {
       int firstByte = readByte();
       boolean huffmanDecode = (firstByte & 0x80) == 0x80; // 1NNNNNNN
@@ -352,6 +362,7 @@ final class Hpack {
 
   static final Map<ByteString, Integer> NAME_TO_FIRST_INDEX = nameToFirstIndex();
 
+  /**HTTP Header 属性name索引Map*/
   private static Map<ByteString, Integer> nameToFirstIndex() {
     Map<ByteString, Integer> result = new LinkedHashMap<>(STATIC_HEADER_TABLE.length);
     for (int i = 0; i < STATIC_HEADER_TABLE.length; i++) {
@@ -362,6 +373,7 @@ final class Hpack {
     return Collections.unmodifiableMap(result);
   }
 
+  /** 方法与reader类似*/
   static final class Writer {
     private static final int SETTINGS_HEADER_TABLE_SIZE = 4096;
 
@@ -429,6 +441,7 @@ final class Hpack {
       return entriesToEvict;
     }
 
+    /** 插入动态表 */
     private void insertIntoDynamicTable(Header entry) {
       int delta = entry.hpackSize;
 
@@ -474,7 +487,7 @@ final class Hpack {
         int headerIndex = -1;
         int headerNameIndex = -1;
 
-        Integer staticIndex = NAME_TO_FIRST_INDEX.get(name);
+        Integer staticIndex = NAME_TO_FIRST_INDEX.get(name);// 直接送静态表中获取属性name
         if (staticIndex != null) {
           headerNameIndex = staticIndex + 1;
           if (headerNameIndex > 1 && headerNameIndex < 8) {
@@ -482,6 +495,7 @@ final class Hpack {
             // it's unnecessary to waste cycles looking at them. This check is built on the
             // observation that the header entries we care about are in adjacent pairs, and we
             // always know the first index of the pair.
+            // 静态索引表中确定位置
             if (Util.equal(STATIC_HEADER_TABLE[headerNameIndex - 1].value, value)) {
               headerIndex = headerNameIndex;
             } else if (Util.equal(STATIC_HEADER_TABLE[headerNameIndex].value, value)) {
@@ -490,6 +504,7 @@ final class Hpack {
           }
         }
 
+        // 动态索引表中确定位置
         if (headerIndex == -1) {
           for (int j = nextHeaderIndex + 1, length = dynamicTable.length; j < length; j++) {
             if (Util.equal(dynamicTable[j].name, name)) {
@@ -505,8 +520,8 @@ final class Hpack {
 
         if (headerIndex != -1) {
           // Indexed Header Field.
-          writeInt(headerIndex, PREFIX_7_BITS, 0x80);
-        } else if (headerNameIndex == -1) {
+          writeInt(headerIndex, PREFIX_7_BITS, 0x80);// 直接使用，已有索引
+        } else if (headerNameIndex == -1) {// 新value、name
           // Literal Header Field with Incremental Indexing - New Name.
           out.writeByte(0x40);
           writeByteString(name);
@@ -515,11 +530,11 @@ final class Hpack {
         } else if (name.startsWith(Header.PSEUDO_PREFIX) && !Header.TARGET_AUTHORITY.equals(name)) {
           // Follow Chromes lead - only include the :authority pseudo header, but exclude all other
           // pseudo headers. Literal Header Field without Indexing - Indexed Name.
-          writeInt(headerNameIndex, PREFIX_4_BITS, 0);
+          writeInt(headerNameIndex, PREFIX_4_BITS, 0);// chrome自定义header
           writeByteString(value);
         } else {
           // Literal Header Field with Incremental Indexing - Indexed Name.
-          writeInt(headerNameIndex, PREFIX_6_BITS, 0x40);
+          writeInt(headerNameIndex, PREFIX_6_BITS, 0x40);// 新value
           writeByteString(value);
           insertIntoDynamicTable(header);
         }
@@ -530,7 +545,7 @@ final class Hpack {
     void writeInt(int value, int prefixMask, int bits) {
       // Write the raw value for a single byte value.
       if (value < prefixMask) {
-        out.writeByte(bits | value);
+        out.writeByte(bits | value);// 生成一个字节
         return;
       }
 
@@ -539,6 +554,7 @@ final class Hpack {
       value -= prefixMask;
 
       // Write 7 bits at a time 'til we're done.
+      // 与reader中对应，不断生成新的字节
       while (value >= 0x80) {
         int b = value & 0x7f;
         out.writeByte(b | 0x80);
@@ -547,6 +563,7 @@ final class Hpack {
       out.writeByte(value);
     }
 
+    /**写霍夫曼编码*/
     void writeByteString(ByteString data) throws IOException {
       if (useCompression && Huffman.get().encodedLength(data) < data.size()) {
         Buffer huffmanBuffer = new Buffer();
@@ -590,6 +607,7 @@ final class Hpack {
   /**
    * An HTTP/2 response cannot contain uppercase header characters and must be treated as
    * malformed.
+   * 小写检查
    */
   static ByteString checkLowercase(ByteString name) throws IOException {
     for (int i = 0, length = name.size(); i < length; i++) {
