@@ -58,7 +58,7 @@ final class Http2Writer implements Closeable {
     this.sink = sink;
     this.client = client;
     this.hpackBuffer = new Buffer();
-    this.hpackWriter = new Hpack.Writer(hpackBuffer);
+    this.hpackWriter = new Hpack.Writer(hpackBuffer);// 设置header输出缓冲区
     this.maxFrameSize = INITIAL_MAX_FRAME_SIZE;
   }
 
@@ -68,11 +68,12 @@ final class Http2Writer implements Closeable {
     if (logger.isLoggable(FINE)) {
       logger.fine(format(">> CONNECTION %s", CONNECTION_PREFACE.hex()));
     }
-    sink.write(CONNECTION_PREFACE.toByteArray());
-    sink.flush();
+    sink.write(CONNECTION_PREFACE.toByteArray());// 写入输出流
+    sink.flush();// 输出字节
   }
 
   /** Applies {@code peerSettings} and then sends a settings ACK. */
+  /** 握手响应设置 */
   public synchronized void applyAndAckSettings(Settings peerSettings) throws IOException {
     if (closed) throw new IOException("closed");
     this.maxFrameSize = peerSettings.getMaxFrameSize(maxFrameSize);
@@ -262,6 +263,7 @@ final class Http2Writer implements Closeable {
     sink.flush();
   }
 
+  /** 写一个header的标识 */
   public void frameHeader(int streamId, int length, byte type, byte flags) throws IOException {
     if (logger.isLoggable(FINE)) logger.fine(frameLog(false, streamId, length, type, flags));
     if (length > maxFrameSize) {
@@ -296,7 +298,7 @@ final class Http2Writer implements Closeable {
 
   void headers(boolean outFinished, int streamId, List<Header> headerBlock) throws IOException {
     if (closed) throw new IOException("closed");
-    hpackWriter.writeHeaders(headerBlock);
+    hpackWriter.writeHeaders(headerBlock);// 增加一个HTTP2标准并压缩之后的header属性
 
     long byteCount = hpackBuffer.size();
     int length = (int) Math.min(maxFrameSize, byteCount);

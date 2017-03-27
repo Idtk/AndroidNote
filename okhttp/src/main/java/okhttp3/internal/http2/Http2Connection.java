@@ -200,11 +200,20 @@ public final class Http2Connection implements Closeable {
    * Returns a new locally-initiated stream.
    * @param out true to create an output stream that we can use to send data to the remote peer.
    * Corresponds to {@code FLAG_FIN}.
+   * 生成一个新的本地stream
    */
   public Http2Stream newStream(List<Header> requestHeaders, boolean out) throws IOException {
     return newStream(0, requestHeaders, out);
   }
 
+  /**
+   * 新建stream
+   * @param associatedStreamId stream id
+   * @param requestHeaders 请求header
+   * @param out 请求body
+   * @return
+   * @throws IOException
+   */
   private Http2Stream newStream(
       int associatedStreamId, List<Header> requestHeaders, boolean out) throws IOException {
     boolean outFinished = !out;
@@ -222,7 +231,7 @@ public final class Http2Connection implements Closeable {
         nextStreamId += 2;
         stream = new Http2Stream(streamId, this, outFinished, inFinished, requestHeaders);
         flushHeaders = !out || bytesLeftInWriteWindow == 0L || stream.bytesLeftInWriteWindow == 0L;
-        if (stream.isOpen()) {
+        if (stream.isOpen()) { // stream是否可以输入输出
           streams.put(streamId, stream);
         }
       }
@@ -242,6 +251,13 @@ public final class Http2Connection implements Closeable {
     return stream;
   }
 
+  /**
+   * 写响应头
+   * @param streamId
+   * @param outFinished
+   * @param alternating
+   * @throws IOException
+   */
   void writeSynReply(int streamId, boolean outFinished, List<Header> alternating)
       throws IOException {
     writer.synReply(outFinished, streamId, alternating);
@@ -371,6 +387,7 @@ public final class Http2Connection implements Closeable {
     return pings != null ? pings.remove(id) : null;
   }
 
+  // 输出连接
   public void flush() throws IOException {
     writer.flush();
   }

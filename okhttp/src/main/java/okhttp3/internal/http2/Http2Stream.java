@@ -132,6 +132,7 @@ public final class Http2Stream {
    * Removes and returns the stream's received response headers, blocking if necessary until headers
    * have been received. If the returned list contains multiple blocks of headers the blocks will be
    * delimited by 'null'.
+   * 获取响应头
    */
   public synchronized List<Header> takeResponseHeaders() throws IOException {
     if (!isLocallyInitiated()) {
@@ -187,6 +188,7 @@ public final class Http2Stream {
     }
   }
 
+
   public Timeout readTimeout() {
     return readTimeout;
   }
@@ -205,6 +207,8 @@ public final class Http2Stream {
    *
    * @throws IllegalStateException if this stream was initiated by the peer and a {@link
    * #sendResponseHeaders} has not yet been sent.
+   *
+   * 获取输出流对象
    */
   public Sink getSink() {
     synchronized (this) {

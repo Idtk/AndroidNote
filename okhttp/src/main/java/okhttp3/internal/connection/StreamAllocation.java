@@ -145,6 +145,7 @@ public final class StreamAllocation {
   /**
    * Returns a connection to host a new stream. This prefers the existing connection if it exists,
    * then the pool, finally building a new connection.
+   * 获取可用的候选连接
    */
   private RealConnection findConnection(int connectTimeout, int readTimeout, int writeTimeout,
       boolean connectionRetryEnabled) throws IOException {
@@ -188,7 +189,6 @@ public final class StreamAllocation {
       if (canceled) throw new IOException("Canceled");
     }
 
-    // TLS握手 即HTTPS的SSL
     // Do TCP + TLS handshakes. This is a blocking operation.
     result.connect(connectTimeout, readTimeout, writeTimeout, connectionRetryEnabled);
     routeDatabase().connected(result.route());
@@ -211,6 +211,7 @@ public final class StreamAllocation {
     return result;
   }
 
+  // 主动关闭stream
   public void streamFinished(boolean noNewStreams, HttpCodec codec) {
     Socket socket;
     synchronized (connectionPool) {
@@ -224,6 +225,7 @@ public final class StreamAllocation {
     }
     closeQuietly(socket);
   }
+
 
   public HttpCodec codec() {
     synchronized (connectionPool) {
@@ -239,6 +241,7 @@ public final class StreamAllocation {
     return connection;
   }
 
+  // 释放
   public void release() {
     Socket socket;
     synchronized (connectionPool) {
@@ -248,6 +251,7 @@ public final class StreamAllocation {
   }
 
   /** Forbid new streams from being created on the connection that hosts this allocation. */
+  // 禁止继续在连接上新建stream
   public void noNewStreams() {
     Socket socket;
     synchronized (connectionPool) {
@@ -263,6 +267,7 @@ public final class StreamAllocation {
    * <p>Returns a closeable that the caller should pass to {@link Util#closeQuietly} upon completion
    * of the synchronized block. (We don't do I/O while synchronized on the connection pool.)
    */
+  // 解除分配的资源
   private Socket deallocate(boolean noNewStreams, boolean released, boolean streamFinished) {
     assert (Thread.holdsLock(connectionPool));
 
@@ -291,6 +296,7 @@ public final class StreamAllocation {
     return socket;
   }
 
+  // 取消
   public void cancel() {
     HttpCodec codecToCancel;
     RealConnection connectionToCancel;
@@ -306,6 +312,7 @@ public final class StreamAllocation {
     }
   }
 
+  /** stream异常关闭方法 */
   public void streamFailed(IOException e) {
     Socket socket;
     boolean noNewStreams = false;
@@ -353,6 +360,7 @@ public final class StreamAllocation {
   }
 
   /** Remove this allocation from the connection's list of allocations. */
+  // 移除连接所持有的stream
   private void release(RealConnection connection) {
     for (int i = 0, size = connection.allocations.size(); i < size; i++) {
       Reference<StreamAllocation> reference = connection.allocations.get(i);
@@ -372,13 +380,14 @@ public final class StreamAllocation {
    * <p>Returns a closeable that the caller should pass to {@link Util#closeQuietly} upon completion
    * of the synchronized block. (We don't do I/O while synchronized on the connection pool.)
    */
+  /** 将stream转移到新的连接上*/
   public Socket releaseAndAcquire(RealConnection newConnection) {
     assert (Thread.holdsLock(connectionPool));
     if (codec != null || connection.allocations.size() != 1) throw new IllegalStateException();
 
     // Release the old connection.
     Reference<StreamAllocation> onlyAllocation = connection.allocations.get(0);
-    Socket socket = deallocate(true, false, false);
+    Socket socket = deallocate(true, false, false);// 禁止在connection连接上新建stream
 
     // Acquire the new connection.
     this.connection = newConnection;
@@ -396,6 +405,7 @@ public final class StreamAllocation {
     return connection != null ? connection.toString() : address.toString();
   }
 
+  /**对StreamAllocation的异常捕获*/
   public static final class StreamAllocationReference extends WeakReference<StreamAllocation> {
     /**
      * Captures the stack trace at the time the Call is executed or enqueued. This is helpful for

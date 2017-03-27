@@ -67,8 +67,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static okhttp3.internal.Util.closeQuietly;
 
 public final class RealConnection extends Http2Connection.Listener implements Connection {
-  private final ConnectionPool connectionPool;
-  private final Route route;
+  private final ConnectionPool connectionPool; // 连接池
+  private final Route route; // 路由
 
   // The fields below are initialized by connect() and never reassigned.
 
@@ -80,8 +80,8 @@ public final class RealConnection extends Http2Connection.Listener implements Co
    * {@link #rawSocket} itself if this connection does not use SSL.
    */
   private Socket socket;
-  private Handshake handshake;
-  private Protocol protocol;
+  private Handshake handshake;// header 压缩
+  private Protocol protocol;// 网络传输协议
   private Http2Connection http2Connection; // HTTP2的Socket连接
   private BufferedSource source; // 最终调用InputStream
   private BufferedSink sink; // 最终调用OutputStream
@@ -89,6 +89,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   // The fields below track connection state and are guarded by connectionPool.
 
   /** If true, no new streams can be created on this connection. Once true this is always true. */
+  /** 多路复用的连接中是否可以新建stream*/
   public boolean noNewStreams;
 
   public int successCount;
@@ -100,10 +101,11 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   public int allocationLimit = 1;
 
   /** Current streams carried by this connection. */
-  /**当前连接分配的stream数，即多路复用技术**/
+  /**当前连接分配的stream数，即多路复用**/
   public final List<Reference<StreamAllocation>> allocations = new ArrayList<>();
 
   /** Nanotime timestamp when {@code allocations.size()} reached zero. */
+  /** 连接空闲计时 */
   public long idleAtNanos = Long.MAX_VALUE;
 
   public RealConnection(ConnectionPool connectionPool, Route route) {
@@ -119,6 +121,13 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     return result;
   }
 
+  /**
+   * 创建连接
+   * @param connectTimeout
+   * @param readTimeout
+   * @param writeTimeout
+   * @param connectionRetryEnabled
+   */
   public void connect(
       int connectTimeout, int readTimeout, int writeTimeout, boolean connectionRetryEnabled) {
     if (protocol != null) throw new IllegalStateException("already connected");
@@ -208,6 +217,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   }
 
   /** Does all the work necessary to build a full HTTP or HTTPS connection on a raw socket. */
+  /***/
   private void connectSocket(int connectTimeout, int readTimeout) throws IOException {
     Proxy proxy = route.proxy();
     Address address = route.address();
@@ -218,6 +228,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
 
     rawSocket.setSoTimeout(readTimeout);
     try {
+      // 调用socket.connect
       Platform.get().connectSocket(rawSocket, route.socketAddress(), connectTimeout);
     } catch (ConnectException e) {
       ConnectException ce = new ConnectException("Failed to connect to " + route.socketAddress());
@@ -381,6 +392,9 @@ public final class RealConnection extends Http2Connection.Listener implements Co
         && !noNewStreams;
   }
 
+  /**
+   * 生成codec
+   */
   public HttpCodec newCodec(
       OkHttpClient client, StreamAllocation streamAllocation) throws SocketException {
     if (http2Connection != null) {
@@ -467,6 +481,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   /**
    * Returns true if this is an HTTP/2 connection. Such connections can be used in multiple HTTP
    * requests simultaneously.
+   * 连接是否为多路复用
    */
   public boolean isMultiplexed() {
     return http2Connection != null;

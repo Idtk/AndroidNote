@@ -48,6 +48,7 @@ import static okhttp3.internal.http2.Header.TARGET_PATH;
 import static okhttp3.internal.http2.Header.TARGET_SCHEME;
 
 /** Encode requests and responses using HTTP/2 frames. */
+// 使用HTTP2编码格式定制的请求响应
 public final class Http2Codec implements HttpCodec {
   private static final ByteString CONNECTION = ByteString.encodeUtf8("connection");
   private static final ByteString HOST = ByteString.encodeUtf8("host");
