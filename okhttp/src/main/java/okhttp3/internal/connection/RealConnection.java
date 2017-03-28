@@ -133,16 +133,16 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     if (protocol != null) throw new IllegalStateException("already connected");
 
     RouteException routeException = null;
-    List<ConnectionSpec> connectionSpecs = route.address().connectionSpecs();
+    List<ConnectionSpec> connectionSpecs = route.address().connectionSpecs(); // TLS 版本和加密
     ConnectionSpecSelector connectionSpecSelector = new ConnectionSpecSelector(connectionSpecs);
 
-    if (route.address().sslSocketFactory() == null) {
+    if (route.address().sslSocketFactory() == null) { // 不允许使用HTTP明文建立连接
       if (!connectionSpecs.contains(ConnectionSpec.CLEARTEXT)) {
         throw new RouteException(new UnknownServiceException(
             "CLEARTEXT communication not enabled for client"));
       }
       String host = route.address().url().host();
-      if (!Platform.get().isCleartextTrafficPermitted(host)) {
+      if (!Platform.get().isCleartextTrafficPermitted(host)) { // 没有获得允许
         throw new RouteException(new UnknownServiceException(
             "CLEARTEXT communication to " + host + " not permitted by network security policy"));
       }
@@ -151,10 +151,13 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     while (true) {
       try {
         if (route.requiresTunnel()) {
+          // HTTPS
           connectTunnel(connectTimeout, readTimeout, writeTimeout);
         } else {
+          // HTTP
           connectSocket(connectTimeout, readTimeout);
         }
+        // 建立连接
         establishProtocol(connectionSpecSelector);
         break;
       } catch (IOException e) {
@@ -182,7 +185,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
 
     if (http2Connection != null) {
       synchronized (connectionPool) {
-        allocationLimit = http2Connection.maxConcurrentStreams();
+        allocationLimit = http2Connection.maxConcurrentStreams(); // 获取多路复用连接上的当前stream数量
       }
     }
   }
@@ -239,6 +242,11 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     sink = Okio.buffer(Okio.sink(rawSocket));
   }
 
+  /**
+   * 建立连接，HTTP，或者HTTPS
+   * @param connectionSpecSelector
+   * @throws IOException
+   */
   private void establishProtocol(ConnectionSpecSelector connectionSpecSelector) throws IOException {
     if (route.address().sslSocketFactory() == null) {
       protocol = Protocol.HTTP_1_1;

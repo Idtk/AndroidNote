@@ -39,7 +39,7 @@ import static okhttp3.internal.Util.intersect;
  */
 
 /**
- * TLS（传输层安全协议）加密方式
+ * TLS（传输层安全协议）版本和加密方式
  */
 public final class ConnectionSpec {
 

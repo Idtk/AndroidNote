@@ -69,19 +69,23 @@ import static okhttp3.internal.Util.closeQuietly;
  * but not the other streams sharing its connection. But if the TLS handshake is still in progress
  * then canceling may break the entire connection.
  */
+
+/**
+ * 如其名，用于分配stream，包括了建立HTTP连接的一套组件，如地址，路由，连接，协议等
+ */
 public final class StreamAllocation {
-  public final Address address;
-  private Route route;
-  private final ConnectionPool connectionPool;
-  private final Object callStackTrace;
+  public final Address address; // 地址
+  private Route route; // 路由
+  private final ConnectionPool connectionPool; // 连接池
+  private final Object callStackTrace; // 捕获异常
 
   // State guarded by connectionPool.
-  private final RouteSelector routeSelector;
-  private int refusedStreamCount;
-  private RealConnection connection;
-  private boolean released;
-  private boolean canceled;
-  private HttpCodec codec;
+  private final RouteSelector routeSelector; // 路由选择
+  private int refusedStreamCount; // 充值异常stream数量
+  private RealConnection connection; // 连接，一般会多路服用
+  private boolean released; // 释放连接
+  private boolean canceled; // 取消连接
+  private HttpCodec codec;  // 编码 Http1Codec、Http2Codec 两种选择
 
   public StreamAllocation(ConnectionPool connectionPool, Address address, Object callStackTrace) {
     this.connectionPool = connectionPool;
