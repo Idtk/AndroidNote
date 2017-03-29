@@ -154,6 +154,7 @@ public final class Util {
    * Reads until {@code in} is exhausted or the deadline has been reached. This is careful to not
    * extend the deadline if one exists already.
    */
+  /** 从缓冲区读取body */
   public static boolean skipAll(Source source, int duration, TimeUnit timeUnit) throws IOException {
     long now = System.nanoTime();
     long originalDuration = source.timeout().hasDeadline()

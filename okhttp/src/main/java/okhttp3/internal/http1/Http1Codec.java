@@ -167,6 +167,7 @@ public final class Http1Codec implements HttpCodec {
   }
 
   /** Returns bytes of a request header for sending on an HTTP transport. */
+  /** 缓冲区中写入request header */
   public void writeRequest(Headers headers, String requestLine) throws IOException {
     if (state != STATE_IDLE) throw new IllegalStateException("state: " + state);
     sink.writeUtf8(requestLine).writeUtf8("\r\n");
@@ -180,6 +181,12 @@ public final class Http1Codec implements HttpCodec {
     state = STATE_OPEN_REQUEST_BODY;
   }
 
+  /**
+   * 构建响应builder
+   * @param expectContinue true to return null if this is an intermediate response with a "100"
+   * @return
+   * @throws IOException
+   */
   @Override public Response.Builder readResponseHeaders(boolean expectContinue) throws IOException {
     if (state != STATE_OPEN_REQUEST_BODY && state != STATE_READ_RESPONSE_HEADERS) {
       throw new IllegalStateException("state: " + state);
@@ -230,6 +237,7 @@ public final class Http1Codec implements HttpCodec {
     return new FixedLengthSink(contentLength);
   }
 
+  /**指定Response长度*/
   public Source newFixedLengthSource(long length) throws IOException {
     if (state != STATE_OPEN_RESPONSE_BODY) throw new IllegalStateException("state: " + state);
     state = STATE_READING_RESPONSE_BODY;

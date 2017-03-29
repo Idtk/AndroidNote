@@ -122,7 +122,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   }
 
   /**
-   * 创建连接
+   * 创建socket连接，选择协议，并验证HTTPS安全信息，如果是HTTPS的话
    * @param connectTimeout
    * @param readTimeout
    * @param writeTimeout
@@ -157,7 +157,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
           // HTTP
           connectSocket(connectTimeout, readTimeout);
         }
-        // 建立连接
+        // 选择协议
         establishProtocol(connectionSpecSelector);
         break;
       } catch (IOException e) {
@@ -193,9 +193,12 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   /**
    * Does all the work to build an HTTPS connection over a proxy tunnel. The catch here is that a
    * proxy server can issue an auth challenge and then close the connection.
+   *
+   * 创建HTTPS的请求
    */
   private void connectTunnel(int connectTimeout, int readTimeout, int writeTimeout)
       throws IOException {
+    // 创建TLS隧道的请求
     Request tunnelRequest = createTunnelRequest();
     HttpUrl url = tunnelRequest.url();
     int attemptedConnections = 0;
@@ -204,8 +207,9 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       if (++attemptedConnections > maxAttempts) {
         throw new ProtocolException("Too many tunnel connections attempted: " + maxAttempts);
       }
-
+      // 创建socket
       connectSocket(connectTimeout, readTimeout);
+      // 创建隧道请求
       tunnelRequest = createTunnel(readTimeout, writeTimeout, tunnelRequest, url);
 
       if (tunnelRequest == null) break; // Tunnel successfully created.
@@ -220,14 +224,14 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   }
 
   /** Does all the work necessary to build a full HTTP or HTTPS connection on a raw socket. */
-  /***/
+  /** 创建HTTP 或者 HTTPS socket */
   private void connectSocket(int connectTimeout, int readTimeout) throws IOException {
     Proxy proxy = route.proxy();
     Address address = route.address();
 
     rawSocket = proxy.type() == Proxy.Type.DIRECT || proxy.type() == Proxy.Type.HTTP
-        ? address.socketFactory().createSocket()
-        : new Socket(proxy);
+        ? address.socketFactory().createSocket() // HTTP
+        : new Socket(proxy); // HTTPS
 
     rawSocket.setSoTimeout(readTimeout);
     try {
@@ -238,23 +242,27 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       ce.initCause(e);
       throw ce;
     }
-    source = Okio.buffer(Okio.source(rawSocket));
-    sink = Okio.buffer(Okio.sink(rawSocket));
+    source = Okio.buffer(Okio.source(rawSocket)); // 读缓冲区工具
+    sink = Okio.buffer(Okio.sink(rawSocket)); // 写缓冲区工具
   }
 
   /**
-   * 建立连接，HTTP，或者HTTPS
+   * 连接HTTP1，或者HTTP2增加协议
    * @param connectionSpecSelector
    * @throws IOException
    */
   private void establishProtocol(ConnectionSpecSelector connectionSpecSelector) throws IOException {
+    // HTTP1
     if (route.address().sslSocketFactory() == null) {
       protocol = Protocol.HTTP_1_1;
       socket = rawSocket;
       return;
     }
 
+    // 如果是HTTPS，则进行TLS连接配置、验证
     connectTls(connectionSpecSelector);
+
+    // HTTP2
 
     if (protocol == Protocol.HTTP_2) {
       socket.setSoTimeout(0); // HTTP/2 connection timeouts are set per-stream.
@@ -262,10 +270,15 @@ public final class RealConnection extends Http2Connection.Listener implements Co
           .socket(socket, route.address().url().host(), source, sink)
           .listener(this)
           .build();
-      http2Connection.start();
+      http2Connection.start(); // 创建连接
     }
   }
 
+  /**
+   * TLS连接配置、验证
+   * @param connectionSpecSelector
+   * @throws IOException
+   */
   private void connectTls(ConnectionSpecSelector connectionSpecSelector) throws IOException {
     Address address = route.address();
     SSLSocketFactory sslSocketFactory = address.sslSocketFactory();
@@ -273,10 +286,12 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     SSLSocket sslSocket = null;
     try {
       // Create the wrapper over the connected socket.
+      // 创建一个SSL的socket
       sslSocket = (SSLSocket) sslSocketFactory.createSocket(
           rawSocket, address.url().host(), address.url().port(), true /* autoClose */);
 
       // Configure the socket's ciphers, TLS versions, and extensions.
+      // 配置SSL的加密属性
       ConnectionSpec connectionSpec = connectionSpecSelector.configureSecureSocket(sslSocket);
       if (connectionSpec.supportsTlsExtensions()) {
         Platform.get().configureTlsExtensions(
@@ -284,10 +299,12 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       }
 
       // Force handshake. This can throw!
+      // SSL握手
       sslSocket.startHandshake();
-      Handshake unverifiedHandshake = Handshake.get(sslSocket.getSession());
+      Handshake unverifiedHandshake = Handshake.get(sslSocket.getSession());// 获取会话，用于之后通信
 
       // Verify that the socket's certificates are acceptable for the target host.
+      // 会话和地址认证冲突
       if (!address.hostnameVerifier().verify(address.url().host(), sslSocket.getSession())) {
         X509Certificate cert = (X509Certificate) unverifiedHandshake.peerCertificates().get(0);
         throw new SSLPeerUnverifiedException("Hostname " + address.url().host() + " not verified:"
@@ -297,16 +314,18 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       }
 
       // Check that the certificate pinner is satisfied by the certificates presented.
+      // 校验指纹
       address.certificatePinner().check(address.url().host(),
           unverifiedHandshake.peerCertificates());
 
       // Success! Save the handshake and the ALPN protocol.
+      // 保存成功的握手和HTTP2 ALPN扩展的协议
       String maybeProtocol = connectionSpec.supportsTlsExtensions()
           ? Platform.get().getSelectedProtocol(sslSocket)
           : null;
       socket = sslSocket;
-      source = Okio.buffer(Okio.source(socket));
-      sink = Okio.buffer(Okio.sink(socket));
+      source = Okio.buffer(Okio.source(socket)); // 读缓冲区
+      sink = Okio.buffer(Okio.sink(socket));// 写缓冲区
       handshake = unverifiedHandshake;
       protocol = maybeProtocol != null
           ? Protocol.get(maybeProtocol)
@@ -317,6 +336,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       throw e;
     } finally {
       if (sslSocket != null) {
+        // 完成握手
         Platform.get().afterHandshake(sslSocket);
       }
       if (!success) {
@@ -329,17 +349,26 @@ public final class RealConnection extends Http2Connection.Listener implements Co
    * To make an HTTPS connection over an HTTP proxy, send an unencrypted CONNECT request to create
    * the proxy connection. This may need to be retried if the proxy requires authorization.
    */
+  /** 请求创建代理连接，有些代理需要认证
+   *  HTTP 客户端通过 CONNECT 方法请求隧道代理创建一条到达任意目的服务器和端口的 TCP 连接，
+   *  并对客户端和服务器之间的后继数据进行盲转发。即握手
+   *  https://imququ.com/post/web-proxy.html
+   */
   private Request createTunnel(int readTimeout, int writeTimeout, Request tunnelRequest,
       HttpUrl url) throws IOException {
     // Make an SSL Tunnel on the first message pair of each SSL + proxy connection.
     String requestLine = "CONNECT " + Util.hostHeader(url, true) + " HTTP/1.1";
     while (true) {
+      // 先使用HTTP1验证
       Http1Codec tunnelConnection = new Http1Codec(null, null, source, sink);
       source.timeout().timeout(readTimeout, MILLISECONDS);
       sink.timeout().timeout(writeTimeout, MILLISECONDS);
+      // 缓冲区中写入HTTP1编码格式的请求头
       tunnelConnection.writeRequest(tunnelRequest.headers(), requestLine);
+      // 输出缓冲区的内容，即写入socket
       tunnelConnection.finishRequest();
-      Response response = tunnelConnection.readResponseHeaders(false)
+
+      Response response = tunnelConnection.readResponseHeaders(false) // false时，返回null的builder
           .request(tunnelRequest)
           .build();
       // The response body from a CONNECT should be empty, but if it is not then we should consume
@@ -348,12 +377,12 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       if (contentLength == -1L) {
         contentLength = 0L;
       }
-      Source body = tunnelConnection.newFixedLengthSource(contentLength);
-      Util.skipAll(body, Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
+      Source body = tunnelConnection.newFixedLengthSource(contentLength); // 指定response body 的长度
+      Util.skipAll(body, Integer.MAX_VALUE, TimeUnit.MILLISECONDS); // 在最大时间内读取body
       body.close();
 
       switch (response.code()) {
-        case HTTP_OK:
+        case HTTP_OK:// 200
           // Assume the server won't send a TLS ServerHello until we send a TLS ClientHello. If
           // that happens, then we will have buffered bytes that are needed by the SSLSocket!
           // This check is imperfect: it doesn't tell us whether a handshake will succeed, just
@@ -363,7 +392,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
           }
           return null;
 
-        case HTTP_PROXY_AUTH:
+        case HTTP_PROXY_AUTH: // 407 需要身份验证
           tunnelRequest = route.address().proxyAuthenticator().authenticate(route, response);
           if (tunnelRequest == null) throw new IOException("Failed to authenticate with proxy");
 
@@ -383,6 +412,10 @@ public final class RealConnection extends Http2Connection.Listener implements Co
    * Returns a request that creates a TLS tunnel via an HTTP proxy. Everything in the tunnel request
    * is sent unencrypted to the proxy server, so tunnels include only the minimum set of headers.
    * This avoids sending potentially sensitive data like HTTP cookies to the proxy unencrypted.
+   */
+  /**
+   * 创建HTTPS请求，通过代理
+   * @return
    */
   private Request createTunnelRequest() {
     return new Request.Builder()
@@ -415,6 +448,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     }
   }
 
+  // webSocket
   public RealWebSocket.Streams newWebSocketStreams(final StreamAllocation streamAllocation) {
     return new RealWebSocket.Streams(true, source, sink) {
       @Override public void close() throws IOException {
@@ -437,6 +471,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   }
 
   /** Returns true if this connection is ready to host new streams. */
+  /** 检查当前连接是否可用 */
   public boolean isHealthy(boolean doExtensiveChecks) {
     if (socket.isClosed() || socket.isInputShutdown() || socket.isOutputShutdown()) {
       return false;
