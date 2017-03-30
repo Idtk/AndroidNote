@@ -54,6 +54,8 @@ import static okhttp3.internal.http.StatusLine.HTTP_TEMP_REDIRECT;
 /**
  * This interceptor recovers from failures and follows redirects as necessary. It may throw an
  * {@link IOException} if the call was canceled.
+ *
+ * 连接重定向和重试
  */
 public final class RetryAndFollowUpInterceptor implements Interceptor {
   /**
@@ -183,6 +185,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
         throw new HttpRetryException("Cannot retry streamed HTTP body", response.code());
       }
 
+      // 如果连接不可以重用
       if (!sameConnection(response, followUp.url())) {
         streamAllocation.release();
         streamAllocation = new StreamAllocation(
@@ -224,6 +227,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
    * {@code e} is recoverable, or false if the failure is permanent. Requests with a body can only
    * be recovered if the body is buffered or if the failure occurred before the request has been
    * sent.
+   * 尝试重新连接
    */
   private boolean recover(IOException e, boolean requestSendStarted, Request userRequest) {
     streamAllocation.streamFailed(e);
@@ -238,34 +242,35 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
     if (!isRecoverable(e, requestSendStarted)) return false;
 
     // No more routes to attempt.
-    if (!streamAllocation.hasMoreRoutes()) return false;
+    if (!streamAllocation.hasMoreRoutes()) return false; // 连接失败，请求还未发送
 
     // For failure recovery, use the same route selector with a new connection.
     return true;
   }
 
+  /** 尝试恢复连接 */
   private boolean isRecoverable(IOException e, boolean requestSendStarted) {
     // If there was a protocol problem, don't recover.
-    if (e instanceof ProtocolException) {
+    if (e instanceof ProtocolException) { // 协议
       return false;
     }
 
     // If there was an interruption don't recover, but if there was a timeout connecting to a route
     // we should try the next route (if there is one).
-    if (e instanceof InterruptedIOException) {
+    if (e instanceof InterruptedIOException) { // 拦截
       return e instanceof SocketTimeoutException && !requestSendStarted;
     }
 
     // Look for known client-side or negotiation errors that are unlikely to be fixed by trying
     // again with a different route.
-    if (e instanceof SSLHandshakeException) {
+    if (e instanceof SSLHandshakeException) { // 握手
       // If the problem was a CertificateException from the X509TrustManager,
       // do not retry.
       if (e.getCause() instanceof CertificateException) {
         return false;
       }
     }
-    if (e instanceof SSLPeerUnverifiedException) {
+    if (e instanceof SSLPeerUnverifiedException) { // 认证
       // e.g. a certificate pinning error.
       return false;
     }
@@ -280,6 +285,8 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
    * Figures out the HTTP request to make in response to receiving {@code userResponse}. This will
    * either add authentication headers, follow redirects or handle a client request timeout. If a
    * follow-up is either unnecessary or not applicable, this returns null.
+   *
+   * 根据响应状态码，对请求进行不同的处理，重新认证、重定向、重试
    */
   private Request followUpRequest(Response userResponse) throws IOException {
     if (userResponse == null) throw new IllegalStateException();
@@ -311,6 +318,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
           return null;
         }
         // fall-through
+        // 进行重定向
       case HTTP_MULT_CHOICE:
       case HTTP_MOVED_PERM:
       case HTTP_MOVED_TEMP:
@@ -327,7 +335,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
 
         // If configured, don't follow redirects between SSL and non-SSL.
         boolean sameScheme = url.scheme().equals(userResponse.request().url().scheme());
-        if (!sameScheme && !client.followSslRedirects()) return null;
+        if (!sameScheme && !client.followSslRedirects()) return null; // SSL连接不要进行非SSL的重定向
 
         // Most redirects don't include a request body.
         Request.Builder requestBuilder = userResponse.request().newBuilder();
@@ -373,6 +381,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
   /**
    * Returns true if an HTTP request for {@code followUp} can reuse the connection used by this
    * engine.
+   * 比较连接是否相同
    */
   private boolean sameConnection(Response response, HttpUrl followUp) {
     HttpUrl url = response.request().url();

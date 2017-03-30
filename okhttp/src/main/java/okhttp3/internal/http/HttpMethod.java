@@ -15,6 +15,8 @@
  */
 package okhttp3.internal.http;
 
+/** 请求方法的一些属性校验，cache、body 、redirect */
+
 public final class HttpMethod {
   public static boolean invalidatesCache(String method) {
     return method.equals("POST")

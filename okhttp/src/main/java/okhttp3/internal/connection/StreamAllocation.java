@@ -255,7 +255,7 @@ public final class StreamAllocation {
   }
 
   /** Forbid new streams from being created on the connection that hosts this allocation. */
-  // 禁止继续在连接上新建stream
+  // 在连接上不可新建stream
   public void noNewStreams() {
     Socket socket;
     synchronized (connectionPool) {

@@ -46,7 +46,7 @@ public final class Handshake {
   }
 
   /**
-   * 获取HTTPS回话中的参数，新建握手
+   * 获取server端的CipherSuite、tlsVersion、Certificate新建握手
    * @param session
    * @return
    */

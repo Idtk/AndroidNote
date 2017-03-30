@@ -270,7 +270,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
           .socket(socket, route.address().url().host(), source, sink)
           .listener(this)
           .build();
-      http2Connection.start(); // 创建连接
+      http2Connection.start();
     }
   }
 
@@ -299,9 +299,9 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       }
 
       // Force handshake. This can throw!
-      // SSL握手
+      // client Hello
       sslSocket.startHandshake();
-      Handshake unverifiedHandshake = Handshake.get(sslSocket.getSession());// 获取会话，用于之后通信
+      Handshake unverifiedHandshake = Handshake.get(sslSocket.getSession());// 获取会话，包含server发送的证书
 
       // Verify that the socket's certificates are acceptable for the target host.
       // 会话和地址认证冲突
@@ -330,7 +330,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       protocol = maybeProtocol != null
           ? Protocol.get(maybeProtocol)
           : Protocol.HTTP_1_1;
-      success = true;
+      success = true; // HTTPS 连接建立成功
     } catch (AssertionError e) {
       if (Util.isAndroidGetsocknameError(e)) throw new IOException(e);
       throw e;
@@ -434,7 +434,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   }
 
   /**
-   * 生成codec
+   * 选择codec
    */
   public HttpCodec newCodec(
       OkHttpClient client, StreamAllocation streamAllocation) throws SocketException {

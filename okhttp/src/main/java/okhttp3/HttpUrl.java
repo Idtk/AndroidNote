@@ -285,7 +285,7 @@ import static okhttp3.internal.Util.skipTrailingAsciiWhitespace;
 /**
  * 用于http或者https请求的url
  * scheme、域名、uri、端口、用户名及密码参数
- * url的编码
+ * url的编码、校验
  */
 public final class HttpUrl {
   private static final char[] HEX_DIGITS =

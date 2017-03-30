@@ -488,6 +488,7 @@ public final class Http2Connection implements Closeable {
    * @param sendConnectionPreface true to send connection preface frames. This should always be true
    *     except for in tests that don't check for a connection preface.
    */
+  /** 发送建立连接的hello报文给远程 */
   void start(boolean sendConnectionPreface) throws IOException {
     if (sendConnectionPreface) {
       writer.connectionPreface();

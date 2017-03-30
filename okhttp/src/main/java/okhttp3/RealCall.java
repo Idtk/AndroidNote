@@ -194,7 +194,7 @@ final class RealCall implements Call {
     interceptors.addAll(client.interceptors());
     // 重定向与失败重试
     interceptors.add(retryAndFollowUpInterceptor);
-    // 用户的请求头处理，响应处理
+    // 用户的请求头处理，响应头处理
     // (Cookie持久性策略)
     interceptors.add(new BridgeInterceptor(client.cookieJar()));
     // 缓存请求、响应缓存的写入 (客户端设置的缓存策略)
