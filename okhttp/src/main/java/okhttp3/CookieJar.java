@@ -30,6 +30,8 @@ import java.util.List;
  * database to hold accepted cookies. The <a
  * href="https://tools.ietf.org/html/rfc6265#section-5.3">cookie storage model</a> specifies
  * policies for updating and expiring cookies.
+ *
+ * cookie持久性策略
  */
 public interface CookieJar {
   /** A cookie jar that never accepts any cookies. */

@@ -36,6 +36,10 @@ import static okhttp3.internal.Util.equal;
 import static okhttp3.internal.http.StatusLine.HTTP_CONTINUE;
 
 /** Headers and utilities for internal use by OkHttp. */
+
+/**
+ * OkHttp内使用的 Http Header 工具类
+ */
 public final class HttpHeaders {
   private static final String TOKEN = "([^ \"=]*)";
   private static final String QUOTED_STRING = "\"([^\"]*)\"";
@@ -173,12 +177,15 @@ public final class HttpHeaders {
     return challenges;
   }
 
+  /**
+   * 用于保存cookie
+   */
   public static void receiveHeaders(CookieJar cookieJar, HttpUrl url, Headers headers) {
     if (cookieJar == CookieJar.NO_COOKIES) return;
 
     List<Cookie> cookies = Cookie.parseAll(url, headers);
     if (cookies.isEmpty()) return;
-
+    // 存储cookie，用于cookie保持
     cookieJar.saveFromResponse(url, cookies);
   }
 

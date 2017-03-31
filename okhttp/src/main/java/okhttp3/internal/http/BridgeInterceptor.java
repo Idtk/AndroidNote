@@ -56,6 +56,7 @@ public final class BridgeInterceptor implements Interceptor {
     Request userRequest = chain.request();
     Request.Builder requestBuilder = userRequest.newBuilder();
 
+    // request header的一些属性设置
     RequestBody body = userRequest.body();
     if (body != null) {
       MediaType contentType = body.contentType();
@@ -100,8 +101,8 @@ public final class BridgeInterceptor implements Interceptor {
     }
     // 执行CacheInterceptor
     Response networkResponse = chain.proceed(requestBuilder.build());
-
-    HttpHeaders.receiveHeaders(cookieJar, userRequest.url(), networkResponse.headers());// 保存cookie
+    // 保存cookie
+    HttpHeaders.receiveHeaders(cookieJar, userRequest.url(), networkResponse.headers());
 
     Response.Builder responseBuilder = networkResponse.newBuilder()
         .request(userRequest);// 用户请求

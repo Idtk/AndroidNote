@@ -24,6 +24,9 @@ import okio.ByteString;
 import okio.Okio;
 import okio.Source;
 
+/**
+ * RequestBody的构造
+ */
 public abstract class RequestBody {
   /** Returns the Content-Type header for this body. */
   public abstract MediaType contentType();

@@ -297,6 +297,8 @@ public final class Util {
   /**
    * Decrements {@code limit} until {@code input[limit - 1]} is not ASCII whitespace. Stops at
    * {@code pos}.
+   *
+   * 去除一些特殊字符
    */
   public static int skipTrailingAsciiWhitespace(String input, int pos, int limit) {
     for (int i = limit - 1; i >= pos; i--) {
@@ -315,6 +317,13 @@ public final class Util {
   }
 
   /** Equivalent to {@code string.substring(pos, limit).trim()}. */
+  /**
+   * 截取字符串
+   * @param string
+   * @param pos
+   * @param limit
+   * @return
+   */
   public static String trimSubstring(String string, int pos, int limit) {
     int start = skipLeadingAsciiWhitespace(string, pos, limit);
     int end = skipTrailingAsciiWhitespace(string, start, limit);
@@ -335,6 +344,8 @@ public final class Util {
   /**
    * Returns the index of the first character in {@code input} that is {@code delimiter}. Returns
    * limit if there is no such character.
+   *
+   * 返回指定字符出现的位置
    */
   public static int delimiterOffset(String input, int pos, int limit, char delimiter) {
     for (int i = pos; i < limit; i++) {
@@ -388,6 +399,8 @@ public final class Util {
    * Returns the index of the first character in {@code input} that is either a control character
    * (like {@code \u0000 or \n}) or a non-ASCII character. Returns -1 if {@code input} has no such
    * characters.
+   *
+   * 不是ASCII或者是ASCII中不现实字符的部分
    */
   public static int indexOfControlOrNonAscii(String input) {
     for (int i = 0, length = input.length(); i < length; i++) {

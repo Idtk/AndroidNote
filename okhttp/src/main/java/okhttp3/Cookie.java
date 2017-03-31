@@ -40,6 +40,8 @@ import static okhttp3.internal.Util.verifyAsIpAddress;
  * <p>This class doesn't support additional attributes on cookies, like <a
  * href="https://code.google.com/p/chromium/issues/detail?id=232693">Chromium's Priority=HIGH
  * extension</a>.
+ *
+ * 用于构建和解析cookie
  */
 public final class Cookie {
   private static final Pattern YEAR_PATTERN
@@ -219,18 +221,25 @@ public final class Cookie {
     return parse(System.currentTimeMillis(), url, setCookie);
   }
 
+  /**
+   * 解析cookie键值对，生成新的Cookie对象
+   * @param currentTimeMillis
+   * @param url
+   * @param setCookie
+   * @return
+   */
   static Cookie parse(long currentTimeMillis, HttpUrl url, String setCookie) {
     int pos = 0;
     int limit = setCookie.length();
-    int cookiePairEnd = delimiterOffset(setCookie, pos, limit, ';');
+    int cookiePairEnd = delimiterOffset(setCookie, pos, limit, ';');// 结尾的位置
 
-    int pairEqualsSign = delimiterOffset(setCookie, pos, cookiePairEnd, '=');
+    int pairEqualsSign = delimiterOffset(setCookie, pos, cookiePairEnd, '='); // 键值分割的位置
     if (pairEqualsSign == cookiePairEnd) return null;
 
-    String cookieName = trimSubstring(setCookie, pos, pairEqualsSign);
+    String cookieName = trimSubstring(setCookie, pos, pairEqualsSign);// 获取cookie的name
     if (cookieName.isEmpty() || indexOfControlOrNonAscii(cookieName) != -1) return null;
 
-    String cookieValue = trimSubstring(setCookie, pairEqualsSign + 1, cookiePairEnd);
+    String cookieValue = trimSubstring(setCookie, pairEqualsSign + 1, cookiePairEnd);// 获取cookie的value
     if (indexOfControlOrNonAscii(cookieValue) != -1) return null;
 
     long expiresAt = HttpDate.MAX_DATE;
@@ -243,6 +252,7 @@ public final class Cookie {
     boolean persistent = false;
 
     pos = cookiePairEnd + 1;
+    // 继续循环解析剩下的cookie键值对，如果还存在cookie属性键值对的情况下
     while (pos < limit) {
       int attributePairEnd = delimiterOffset(setCookie, pos, limit, ';');
 
@@ -252,6 +262,7 @@ public final class Cookie {
           ? trimSubstring(setCookie, attributeEqualsSign + 1, attributePairEnd)
           : "";
 
+      // 以下是Set-Cookie值中的各种属性，忽略键大小写的情况下查找值
       if (attributeName.equalsIgnoreCase("expires")) {
         try {
           expiresAt = parseExpires(attributeValue, 0, attributeValue.length());
@@ -280,10 +291,11 @@ public final class Cookie {
       } else if (attributeName.equalsIgnoreCase("httponly")) {
         httpOnly = true;
       }
-
+      // 起始位置偏移，之后while中比较，是否继续循环
       pos = attributePairEnd + 1;
     }
 
+    // 根据上面获取的值，整理属性值
     // If 'Max-Age' is present, it takes precedence over 'Expires', regardless of the order the two
     // attributes are declared in the cookie string.
     if (deltaSeconds == Long.MIN_VALUE) {
@@ -430,12 +442,18 @@ public final class Cookie {
   }
 
   /** Returns all of the cookies from a set of HTTP response headers. */
+  /**
+   * 解析响应头中的set-cookie值，保存一个Cookie对象列表
+   * @param url
+   * @param headers
+   * @return
+   */
   public static List<Cookie> parseAll(HttpUrl url, Headers headers) {
     List<String> cookieStrings = headers.values("Set-Cookie");
     List<Cookie> cookies = null;
 
     for (int i = 0, size = cookieStrings.size(); i < size; i++) {
-      Cookie cookie = Cookie.parse(url, cookieStrings.get(i));
+      Cookie cookie = Cookie.parse(url, cookieStrings.get(i));// 解析cookie键值对
       if (cookie == null) continue;
       if (cookies == null) cookies = new ArrayList<>();
       cookies.add(cookie);

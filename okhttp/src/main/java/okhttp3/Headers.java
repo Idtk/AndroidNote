@@ -96,6 +96,11 @@ public final class Headers {
   }
 
   /** Returns an immutable list of the header values for {@code name}. */
+  /**
+   * header中name属性的值的集合
+   * @param name
+   * @return
+   */
   public List<String> values(String name) {
     List<String> result = null;
     for (int i = 0, size = size(); i < size; i++) {
