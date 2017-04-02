@@ -135,7 +135,7 @@ public final class CacheInterceptor implements Interceptor {
       }
     }
 
-    // 本地没有缓存，使用网络响应
+    // 构建网络响应
     Response response = networkResponse.newBuilder()
         .cacheResponse(stripBody(cacheResponse))
         .networkResponse(stripBody(networkResponse))
@@ -156,6 +156,14 @@ public final class CacheInterceptor implements Interceptor {
         : response;
   }
 
+  /**
+   * 尝试将响应缓存添加到硬盘缓存中
+   * @param userResponse
+   * @param networkRequest
+   * @param responseCache
+   * @return
+   * @throws IOException
+   */
   private CacheRequest maybeCache(Response userResponse, Request networkRequest,
       InternalCache responseCache) throws IOException {
     if (responseCache == null) return null; // 无响应缓存，当然也无请求缓存
@@ -184,24 +192,28 @@ public final class CacheInterceptor implements Interceptor {
    * Returns a new source that writes bytes to {@code cacheRequest} as they are read by the source
    * consumer. This is careful to discard bytes left over when the stream is closed; otherwise we
    * may never exhaust the source stream and therefore not complete the cached response.
+   *
+   * 将缓存请求读到网络响应中
    */
   private Response cacheWritingResponse(final CacheRequest cacheRequest, Response response)
       throws IOException {
     // Some apps return a null body; for compatibility we treat that like a null cache request.
+    // 缓存请求为null或缓存请求的body为null，直接返回网络响应
     if (cacheRequest == null) return response;
     Sink cacheBodyUnbuffered = cacheRequest.body();
     if (cacheBodyUnbuffered == null) return response;
 
-    final BufferedSource source = response.body().source();
-    final BufferedSink cacheBody = Okio.buffer(cacheBodyUnbuffered);
+    final BufferedSource source = response.body().source();// read inputStream
+    final BufferedSink cacheBody = Okio.buffer(cacheBodyUnbuffered);// write outputStream
 
+    // 将cacheRequestBody读取到cacheBody中
     Source cacheWritingSource = new Source() {
       boolean cacheRequestClosed;
 
       @Override public long read(Buffer sink, long byteCount) throws IOException {
         long bytesRead;
         try {
-          bytesRead = source.read(sink, byteCount);// 最终调用inputStream.read
+          bytesRead = source.read(sink, byteCount);// 读取写缓冲区中的cacheBody
         } catch (IOException e) {
           if (!cacheRequestClosed) {
             cacheRequestClosed = true;
@@ -218,7 +230,7 @@ public final class CacheInterceptor implements Interceptor {
           return -1;
         }
 
-        sink.copyTo(cacheBody.buffer(), sink.size() - bytesRead, bytesRead);
+        sink.copyTo(cacheBody.buffer(), sink.size() - bytesRead, bytesRead);// 复制cacheBody到写缓冲区
         cacheBody.emitCompleteSegments();
         return bytesRead;
       }
@@ -243,6 +255,12 @@ public final class CacheInterceptor implements Interceptor {
   }
 
   /** Combines cached headers with a network headers as defined by RFC 2616, 13.5.3. */
+  /**
+   * 先写本地缓存的头属性，再写网络缓存的头属性，相同则被网络属性覆盖
+   * @param cachedHeaders
+   * @param networkHeaders
+   * @return
+   */
   private static Headers combine(Headers cachedHeaders, Headers networkHeaders) {
     Headers.Builder result = new Headers.Builder();
 

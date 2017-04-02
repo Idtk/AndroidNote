@@ -148,6 +148,7 @@ public final class DiskLruCache implements Closeable, Flushable {
   final int valueCount;
   private long size = 0;
   BufferedSink journalWriter;
+  // 访问顺序，即常说的最近最多使用原则
   final LinkedHashMap<String, Entry> lruEntries = new LinkedHashMap<>(0, 0.75f, true);
   int redundantOpCount;
   boolean hasJournalErrors;

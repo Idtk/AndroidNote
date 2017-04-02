@@ -107,6 +107,7 @@ public final class CacheStrategy {
     final Response cacheResponse;
 
     /** The server's time when the cached response was served, if known. */
+    // 响应中设置的"Date"属性对应的值
     private Date servedDate;
     private String servedDateString;
 
@@ -150,8 +151,8 @@ public final class CacheStrategy {
       this.cacheResponse = cacheResponse; // 响应
 
       if (cacheResponse != null) {
-        this.sentRequestMillis = cacheResponse.sentRequestAtMillis();
-        this.receivedResponseMillis = cacheResponse.receivedResponseAtMillis();
+        this.sentRequestMillis = cacheResponse.sentRequestAtMillis();// 发送请求的时间
+        this.receivedResponseMillis = cacheResponse.receivedResponseAtMillis();// 收到响应的时间
         Headers headers = cacheResponse.headers();
         // 解析响应缓存header
         for (int i = 0, size = headers.size(); i < size; i++) {
@@ -296,16 +297,17 @@ public final class CacheStrategy {
     /**
      * Returns the number of milliseconds that the response was fresh for, starting from the served
      * date.
+     * 根据返回响应的Date属性值，计算出Fresh
      */
     private long computeFreshnessLifetime() {
       CacheControl responseCaching = cacheResponse.cacheControl();
       if (responseCaching.maxAgeSeconds() != -1) {
-        return SECONDS.toMillis(responseCaching.maxAgeSeconds());
+        return SECONDS.toMillis(responseCaching.maxAgeSeconds());// 请求的最大缓存时间
       } else if (expires != null) {
         long servedMillis = servedDate != null
             ? servedDate.getTime()
             : receivedResponseMillis;
-        long delta = expires.getTime() - servedMillis;
+        long delta = expires.getTime() - servedMillis;// 响应过期时间间隔
         return delta > 0 ? delta : 0;
       } else if (lastModified != null
           && cacheResponse.request().url().query() == null) {
@@ -316,7 +318,7 @@ public final class CacheStrategy {
         long servedMillis = servedDate != null
             ? servedDate.getTime()
             : sentRequestMillis;
-        long delta = servedMillis - lastModified.getTime();
+        long delta = servedMillis - lastModified.getTime();// 服务器返回的响应改动时间
         return delta > 0 ? (delta / 10) : 0;
       }
       return 0;
@@ -325,6 +327,7 @@ public final class CacheStrategy {
     /**
      * Returns the current age of the response, in milliseconds. The calculation is specified by RFC
      * 2616, 13.2.3 Age Calculations.
+     * 根据返回响应的Date属性值，计算出响应缓存从响应返回开始到当前的时间
      */
     private long cacheResponseAge() {
       long apparentReceivedAge = servedDate != null
