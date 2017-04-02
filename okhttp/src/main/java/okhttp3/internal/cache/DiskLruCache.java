@@ -82,6 +82,8 @@ import static okhttp3.internal.platform.Platform.WARN;
  * corresponding entries will be dropped from the cache. If an error occurs while writing a cache
  * value, the edit will fail silently. Callers should handle other problems by catching {@code
  * IOException} and responding appropriately.
+ *
+ * 硬盘缓存
  */
 public final class DiskLruCache implements Closeable, Flushable {
   static final String JOURNAL_FILE = "journal";
@@ -453,6 +455,7 @@ public final class DiskLruCache implements Closeable, Flushable {
 
   /**
    * Returns an editor for the entry named {@code key}, or null if another edit is in progress.
+   * 根据key获取对应的Editor，如果是新的，则新建一个Entry
    */
   public Editor edit(String key) throws IOException {
     return edit(key, ANY_SEQUENCE_NUMBER);

@@ -42,6 +42,14 @@ import static okhttp3.internal.Util.closeQuietly;
 import static okhttp3.internal.Util.discard;
 
 /** Serves requests from the cache and writes responses to the cache. */
+
+/**
+ * 根据本地硬盘缓存和请求设置，生成缓存策略。
+ * 根据生成的缓存策略，来确定是否可以直接使用上一次相用url、方法、部分头属性返回的响应，
+ * 已达到节省带宽和时间的目的。
+ * 如果使用需要进行网络求情，则继续调用ConnectInterceptor
+ * 获取返回后更新本地缓存
+ */
 public final class CacheInterceptor implements Interceptor {
   final InternalCache cache;
 
@@ -50,6 +58,7 @@ public final class CacheInterceptor implements Interceptor {
   }
 
   @Override public Response intercept(Chain chain) throws IOException {
+    // 如果配置了cache，则从缓存中获取
     Response cacheCandidate = cache != null
         ? cache.get(chain.request())
         : null;
@@ -68,7 +77,7 @@ public final class CacheInterceptor implements Interceptor {
       closeQuietly(cacheCandidate.body()); // The cache candidate wasn't applicable. Close it.
     }
 
-    // 禁止网络并且没有响应缓存，则直接返回504
+    // 没有响应缓存，并且禁止网络，则直接返回504
     // If we're forbidden from using the network and the cache is insufficient, fail.
     if (networkRequest == null && cacheResponse == null) {
       return new Response.Builder()
@@ -82,7 +91,7 @@ public final class CacheInterceptor implements Interceptor {
           .build();
     }
 
-    // 不需要网络，直接从返回中获取结果
+    // 缓存有效，直接从返回中获取，不需要网络
     // If we don't need the network, we're done.
     if (networkRequest == null) {
       return cacheResponse.newBuilder()
@@ -90,6 +99,7 @@ public final class CacheInterceptor implements Interceptor {
           .build();
     }
 
+    // 缓存无效，执行ConnectInterceptor
     Response networkResponse = null;
     try {
       // 执行ConnectInterceptor
@@ -102,11 +112,12 @@ public final class CacheInterceptor implements Interceptor {
       }
     }
 
+    // 本地也有缓存，网络缓存和本地缓存二选一
     // If we have a cache response too, then we're doing a conditional get.
     if (cacheResponse != null) {
       if (networkResponse.code() == HTTP_NOT_MODIFIED) {// 返回304，服务器数据在一定时间段内未更新，并且上次返回的缓存可用
-        Response response = cacheResponse.newBuilder() // 通过响应缓存构造新的返回
-            .headers(combine(cacheResponse.headers(), networkResponse.headers())) // 先添加缓存响应的header键值对，再添加网络响应的header键值对，其中相同的将被覆盖
+        Response response = cacheResponse.newBuilder() // 通过本地缓存构造新的返回
+            .headers(combine(cacheResponse.headers(), networkResponse.headers())) // 先添加本地缓存响应的header键值对，再添加网络响应的header键值对，其中相同的将被覆盖
             .sentRequestAtMillis(networkResponse.sentRequestAtMillis())
             .receivedResponseAtMillis(networkResponse.receivedResponseAtMillis())
             .cacheResponse(stripBody(cacheResponse))
@@ -124,14 +135,15 @@ public final class CacheInterceptor implements Interceptor {
       }
     }
 
-    // 没有响应缓存的情况下
+    // 本地没有缓存，使用网络响应
     Response response = networkResponse.newBuilder()
         .cacheResponse(stripBody(cacheResponse))
         .networkResponse(stripBody(networkResponse))
         .build();
 
+    // 保存缓存到本地
     if (HttpHeaders.hasBody(response)) { // 如果需要响应体
-      CacheRequest cacheRequest = maybeCache(response, networkResponse.request(), cache); // 获取缓存请求
+      CacheRequest cacheRequest = maybeCache(response, networkResponse.request(), cache); // 缓存请求
       response = cacheWritingResponse(cacheRequest, response); // 将请求写入响应对象
     }
 
@@ -146,12 +158,15 @@ public final class CacheInterceptor implements Interceptor {
 
   private CacheRequest maybeCache(Response userResponse, Request networkRequest,
       InternalCache responseCache) throws IOException {
-    if (responseCache == null) return null;
+    if (responseCache == null) return null; // 无响应缓存，当然也无请求缓存
 
     // Should we cache this response for this request?
+    // 是否支持缓存
     if (!CacheStrategy.isCacheable(userResponse, networkRequest)) {
+      // 根据请求的方法，判断是否支持缓存
       if (HttpMethod.invalidatesCache(networkRequest.method())) {
         try {
+          // 如果不支持缓存，则移除
           responseCache.remove(networkRequest);
         } catch (IOException ignored) {
           // The cache cannot be written.
@@ -161,6 +176,7 @@ public final class CacheInterceptor implements Interceptor {
     }
 
     // Offer this request to the cache.
+    // 添加缓存
     return responseCache.put(userResponse);
   }
 

@@ -41,9 +41,9 @@ public final class RealInterceptorChain implements Interceptor.Chain {
       HttpCodec httpCodec, Connection connection, int index, Request request) {
     this.interceptors = interceptors;
     this.connection = connection;
-    this.streamAllocation = streamAllocation;
-    this.httpCodec = httpCodec;
-    this.index = index;
+    this.streamAllocation = streamAllocation;// stream分配
+    this.httpCodec = httpCodec;// 编码
+    this.index = index;// 位置计数
     this.request = request;
   }
 

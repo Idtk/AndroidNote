@@ -45,6 +45,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>Selecting a cache strategy may add conditions to the request (like the "If-Modified-Since"
  * header for conditional GETs) or warnings to the cached response (if the cached data is
  * potentially stale).
+ *
+ * 根据给定的请求和响应缓存，判断出是否需要使用缓存和网络
  */
 public final class CacheStrategy {
   /** The request to send on the network, or null if this call doesn't use the network. */
@@ -136,6 +138,12 @@ public final class CacheStrategy {
     /** Age of the cached response. */
     private int ageSeconds = -1;
 
+    /**
+     * 根据响应缓存头，设置一些属性
+     * @param nowMillis
+     * @param request
+     * @param cacheResponse
+     */
     public Factory(long nowMillis, Request request, Response cacheResponse) {
       this.nowMillis = nowMillis;
       this.request = request; // 请求
@@ -168,6 +176,7 @@ public final class CacheStrategy {
 
     /**
      * Returns a strategy to satisfy {@code request} using the a cached response {@code response}.
+     * 根据之前Factory设置的属性，生成策略
      */
     public CacheStrategy get() {
       CacheStrategy candidate = getCandidate();
@@ -180,23 +189,32 @@ public final class CacheStrategy {
       return candidate;
     }
 
-    // 假设可以请求网络的情况下，返回一个策略
-    // Http的Cache机制总共有4个组成部分：
-    // Cache-Control、Last-Modified（If-Modified-Since）、Etag（If-None-Match） 、Expires
     /** Returns a strategy to use assuming the request can use the network. */
+    /**
+     * 假设可以请求网络的情况下，返回一个策略
+     * Http的Cache机制总共有4个组成部分：
+     * Cache-Control、Last-Modified（If-Modified-Since）、Etag（If-None-Match） 、Expires
+     * 各个属性设置的使用说明，请查看下面的链接
+     * https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Cache-Control
+     * https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Last-Modified
+     * https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/ETag
+     * https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Expires
+     * @return
+     */
     private CacheStrategy getCandidate() {
       // No cached response.
+      // 没有响应缓存
       if (cacheResponse == null) {
         return new CacheStrategy(request, null);
       }
 
-      // 未完成握手
+      // 如果为HTTPS，丢失完成握手缓存
       // Drop the cached response if it's missing a required handshake.
       if (request.isHttps() && cacheResponse.handshake() == null) {
         return new CacheStrategy(request, null);
       }
 
-      // 不应该缓存的响应，如果规则不变，这个检查则是多余的
+      // 不应该缓存的响应
       // If this response shouldn't have been stored, it should never be used
       // as a response source. This check should be redundant as long as the
       // persistence store is well-behaved and the rules are constant.
@@ -205,12 +223,14 @@ public final class CacheStrategy {
       }
 
       // Cache-Control为no-cache|| If-Modified-Since || If-None-Match
-      // 携带验证信息发送到服务器，检查响应在上一次访问后是否更新，如果更新则返回200，否则为304
+      // 携带验证信息或缓存的最后修改时间或特征字符串 发送到服务器，检查响应在上一次访问后是否更新，如果更新则返回200，否则为304
+      // 即需要强制发送一起请求，但如果服务端响应没有修改的情况下，则服务端不会返回完整的响应，以达到节约带宽的目的
       CacheControl requestCaching = request.cacheControl();
       if (requestCaching.noCache() || hasConditions(request)) {
         return new CacheStrategy(request, null);
       }
 
+      // Cache-control 判断开始
       long ageMillis = cacheResponseAge();
       long freshMillis = computeFreshnessLifetime();
 
@@ -238,7 +258,7 @@ public final class CacheStrategy {
         if (ageMillis > oneDayMillis && isFreshnessLifetimeHeuristic()) {
           builder.addHeader("Warning", "113 HttpURLConnection \"Heuristic expiration\"");
         }
-        // 缓存在有效时间内
+        // 缓存在有效时间内，不用再去请求了
         return new CacheStrategy(null, builder.build());
       }
 

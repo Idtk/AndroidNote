@@ -132,6 +132,9 @@ import okio.Source;
  * <p>The {@link CacheControl} class can configure request caching directives and parse response
  * caching directives. It even offers convenient constants {@link CacheControl#FORCE_NETWORK} and
  * {@link CacheControl#FORCE_CACHE} that address the use cases above.
+ *
+ *
+ * 本地的硬盘缓存，在一些情况下达到节省宽带和时间的效果
  */
 public final class Cache implements Closeable, Flushable {
   private static final int VERSION = 201105;
@@ -186,12 +189,17 @@ public final class Cache implements Closeable, Flushable {
     return ByteString.encodeUtf8(url.toString()).md5().hex();
   }
 
+  /**
+   * 从硬盘中，获取之前相同url的缓存
+   * @param request
+   * @return
+   */
   Response get(Request request) {
-    String key = key(request.url()); // 根据url获取key
+    String key = key(request.url()); // 根据url生成key
     DiskLruCache.Snapshot snapshot;// 硬盘缓存快照
     Entry entry;
     try {
-      snapshot = cache.get(key);// 获取硬盘缓存快照
+      snapshot = cache.get(key);// 获取内存中获取缓存
       if (snapshot == null) {
         return null;
       }
@@ -201,14 +209,15 @@ public final class Cache implements Closeable, Flushable {
     }
 
     try {
-      entry = new Entry(snapshot.getSource(ENTRY_METADATA));// 输入流
+      entry = new Entry(snapshot.getSource(ENTRY_METADATA));// 从缓冲区中获取
     } catch (IOException e) {
       Util.closeQuietly(snapshot);
       return null;
     }
 
-    Response response = entry.response(snapshot);
+    Response response = entry.response(snapshot);// 通过快照构建一个response
 
+    // 请求和缓存中的响应信息是否匹配
     if (!entry.matches(request, response)) {
       Util.closeQuietly(response.body());
       return null;
@@ -217,9 +226,15 @@ public final class Cache implements Closeable, Flushable {
     return response;
   }
 
+  /**
+   * 添加缓存
+   * @param response
+   * @return
+   */
   CacheRequest put(Response response) {
     String requestMethod = response.request().method();
 
+    // 校验请求方法是否允许缓存
     if (HttpMethod.invalidatesCache(response.request().method())) {
       try {
         remove(response.request());
@@ -228,6 +243,7 @@ public final class Cache implements Closeable, Flushable {
       }
       return null;
     }
+    // 暂时只有GET方法可以缓存，其余的需要用户自己实现
     if (!requestMethod.equals("GET")) {
       // Don't cache non-GET responses. We're technically allowed to cache
       // HEAD requests and some POST requests, but the complexity of doing
@@ -235,6 +251,8 @@ public final class Cache implements Closeable, Flushable {
       return null;
     }
 
+    // 如果Vary不同，则表示返回的信息，版本不用，不需要缓存
+    // https://imququ.com/post/vary-header-in-http.html
     if (HttpHeaders.hasVaryAll(response)) {
       return null;
     }
@@ -242,10 +260,11 @@ public final class Cache implements Closeable, Flushable {
     Entry entry = new Entry(response);
     DiskLruCache.Editor editor = null;
     try {
-      editor = cache.edit(key(response.request().url()));
+      editor = cache.edit(key(response.request().url()));// 对应key的硬盘缓存editor
       if (editor == null) {
         return null;
       }
+      // 写入缓存
       entry.writeTo(editor);
       return new CacheRequestImpl(editor);
     } catch (IOException e) {
@@ -258,6 +277,11 @@ public final class Cache implements Closeable, Flushable {
     cache.remove(key(request.url()));
   }
 
+  /**
+   * 更新缓存
+   * @param cached
+   * @param network
+   */
   void update(Response cached, Response network) {
     Entry entry = new Entry(network);
     DiskLruCache.Snapshot snapshot = ((CacheResponseBody) cached.body()).snapshot;
@@ -535,6 +559,8 @@ public final class Cache implements Closeable, Flushable {
      * contains the length of the local certificate chain. These certificates are also
      * base64-encoded and appear each on their own line. A length of -1 is used to encode a null
      * array. The last line is optional. If present, it contains the TLS version.
+     *
+     * 缓存条目，其中包含头的缓存策略信息
      */
     public Entry(Source in) throws IOException {
       try {
@@ -603,6 +629,11 @@ public final class Cache implements Closeable, Flushable {
       this.receivedResponseMillis = response.receivedResponseAtMillis();
     }
 
+    /**
+     * 调用Okio来把缓存写入硬盘
+     * @param editor
+     * @throws IOException
+     */
     public void writeTo(DiskLruCache.Editor editor) throws IOException {
       BufferedSink sink = Okio.buffer(editor.newSink(ENTRY_METADATA));
 
@@ -676,6 +707,12 @@ public final class Cache implements Closeable, Flushable {
       }
     }
 
+    /**
+     * 将两段的握手证书写入缓存
+     * @param sink
+     * @param certificates
+     * @throws IOException
+     */
     private void writeCertList(BufferedSink sink, List<Certificate> certificates)
         throws IOException {
       try {
@@ -692,6 +729,12 @@ public final class Cache implements Closeable, Flushable {
       }
     }
 
+    /**
+     * 比较方法、url、头等信息
+     * @param request
+     * @param response
+     * @return
+     */
     public boolean matches(Request request, Response response) {
       return url.equals(request.url().toString())
           && requestMethod.equals(request.method())

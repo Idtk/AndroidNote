@@ -37,7 +37,7 @@ import static okhttp3.internal.Util.hostHeader;
  * request. Then it proceeds to call the network. Finally it builds a user response from the network
  * response.
  *
- * 用户请求头和响应头的处理
+ * 用户请求头和响应头的处理，调用下一个拦截器CacheInterceptor
  */
 public final class BridgeInterceptor implements Interceptor {
   private final CookieJar cookieJar;
@@ -56,7 +56,7 @@ public final class BridgeInterceptor implements Interceptor {
     Request userRequest = chain.request();
     Request.Builder requestBuilder = userRequest.newBuilder();
 
-    // request header的一些属性设置
+    // request header的一些属性处理
     RequestBody body = userRequest.body();
     if (body != null) {
       MediaType contentType = body.contentType();
@@ -101,6 +101,7 @@ public final class BridgeInterceptor implements Interceptor {
     }
     // 执行CacheInterceptor
     Response networkResponse = chain.proceed(requestBuilder.build());
+    // response header的一些属性处理
     // 保存cookie
     HttpHeaders.receiveHeaders(cookieJar, userRequest.url(), networkResponse.headers());
 
@@ -116,7 +117,8 @@ public final class BridgeInterceptor implements Interceptor {
           .removeAll("Content-Length")
           .build();
       responseBuilder.headers(strippedHeaders);
-      responseBuilder.body(new RealResponseBody(strippedHeaders, Okio.buffer(responseBody)));// 转换为用户友好的body
+      // 从缓冲区中的responseBody和header整理为一个响应body对象
+      responseBuilder.body(new RealResponseBody(strippedHeaders, Okio.buffer(responseBody)));
     }
 
     return responseBuilder.build();

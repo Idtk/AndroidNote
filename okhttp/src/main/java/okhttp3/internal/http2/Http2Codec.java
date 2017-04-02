@@ -148,6 +148,12 @@ public final class Http2Codec implements HttpCodec {
   }
 
   /** Returns headers for a name value block containing an HTTP/2 response. */
+  /**
+   * 解析响应头
+   * @param headerBlock
+   * @return
+   * @throws IOException
+   */
   public static Response.Builder readHttp2HeadersList(List<Header> headerBlock) throws IOException {
     StatusLine statusLine = null;
     Headers.Builder headersBuilder = new Headers.Builder();
