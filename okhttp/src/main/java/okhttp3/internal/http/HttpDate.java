@@ -25,6 +25,8 @@ import static okhttp3.internal.Util.UTC;
 
 /**
  * Best-effort parser for HTTP dates.
+ *
+ * 一个时间工具类
  */
 public final class HttpDate {
   /** The last four-digit year: "Fri, 31 Dec 9999 23:59:59 GMT". */

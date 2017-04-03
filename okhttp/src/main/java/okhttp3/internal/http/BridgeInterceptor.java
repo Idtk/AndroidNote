@@ -117,7 +117,7 @@ public final class BridgeInterceptor implements Interceptor {
           .removeAll("Content-Length")
           .build();
       responseBuilder.headers(strippedHeaders);
-      // 从缓冲区中的source和header整理为一个响应body对象
+      // 从缓冲区中的body source和header整理为一个响应body对象
       responseBuilder.body(new RealResponseBody(strippedHeaders, Okio.buffer(responseBody)));
     }
 

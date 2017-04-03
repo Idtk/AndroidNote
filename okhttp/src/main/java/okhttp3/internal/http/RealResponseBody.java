@@ -21,7 +21,7 @@ import okhttp3.ResponseBody;
 import okio.BufferedSource;
 
 /**
- *
+ * ResponseBody的简单包装
  */
 public final class RealResponseBody extends ResponseBody {
   private final Headers headers;

@@ -45,6 +45,8 @@ import okhttp3.internal.http.HttpDate;
  * whitespace.
  *
  * <p>Instances of this class are immutable. Use {@link Builder} to create instances.
+ *
+ * HTTP Header的封装类，包含一些基本的增删改查功能
  */
 public final class Headers {
   private final String[] namesAndValues;

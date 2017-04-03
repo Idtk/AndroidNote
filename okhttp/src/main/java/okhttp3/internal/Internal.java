@@ -36,6 +36,8 @@ import okhttp3.internal.connection.StreamAllocation;
 /**
  * Escalate internal APIs in {@code okhttp3} so they can be used from OkHttp's implementation
  * packages. The only implementation of this interface is in {@link OkHttpClient}.
+ *
+ * 升级内部API，让OkHttp3也可以使用OkHttp的实现，仅在OkHttpClient静态代码块中实现了此类
  */
 public abstract class Internal {
 

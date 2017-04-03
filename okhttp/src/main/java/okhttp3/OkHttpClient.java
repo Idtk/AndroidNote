@@ -120,7 +120,7 @@ import okhttp3.internal.ws.RealWebSocket;
  */
 
 /**
- * Call.Factory 创建Call用于HTTP请求和响应处理
+ * 创建Call用于HTTP请求和响应处理
  */
 
 public class OkHttpClient implements Cloneable, Call.Factory, WebSocket.Factory {

@@ -38,6 +38,8 @@ import static okhttp3.internal.http.StatusLine.HTTP_TEMP_REDIRECT;
  *
  * <p>This class implements {@link Closeable}. Closing it simply closes its response body. See
  * {@link ResponseBody} for an explanation and examples.
+ *
+ * OkHttp的HTTP response封装类
  */
 public final class Response implements Closeable {
   final Request request;

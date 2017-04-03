@@ -20,6 +20,10 @@ import java.net.ProtocolException;
 import okhttp3.Protocol;
 import okhttp3.Response;
 
+/**
+ * 解析header的开头内容，判断出是哪一种服务
+ */
+
 /** An HTTP response status line like "HTTP/1.1 200 OK". */
 public final class StatusLine {
   /** Numeric status code, 307: Temporary Redirect. */
@@ -41,6 +45,12 @@ public final class StatusLine {
     return new StatusLine(response.protocol(), response.code(), response.message());
   }
 
+  /**
+   * header的hex码解析，其实也就是header的开始部分
+   * @param statusLine
+   * @return
+   * @throws IOException
+   */
   public static StatusLine parse(String statusLine) throws IOException {
     // H T T P / 1 . 1   2 0 0   T e m p o r a r y   R e d i r e c t
     // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0

@@ -9,6 +9,9 @@ import okhttp3.internal.http.HttpHeaders;
  *
  * <p>See <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9">RFC 2616,
  * 14.9</a>.
+ *
+ * Cache-Control的属性封装
+ * https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Cache-Control
  */
 public final class CacheControl {
   /**
@@ -140,6 +143,8 @@ public final class CacheControl {
   /**
    * Returns the cache directives of {@code headers}. This honors both Cache-Control and Pragma
    * headers if they are present.
+   *
+   * 解析header中的Cache-Control属性
    */
   public static CacheControl parse(Headers headers) {
     boolean noCache = false;
