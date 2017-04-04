@@ -122,7 +122,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   }
 
   /**
-   * 创建socket连接，选择协议，并验证HTTPS安全信息，如果是HTTPS的话
+   * 创建socket连接或隧道，选择协议，并验证HTTPS安全信息，如果是HTTPS的话，完成握手
    * @param connectTimeout
    * @param readTimeout
    * @param writeTimeout
@@ -259,7 +259,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       return;
     }
 
-    // 如果是HTTPS，则进行TLS连接配置、验证
+    // 如果是HTTPS，则进行TLS连接配置、验证、握手
     connectTls(connectionSpecSelector);
 
     // HTTP2
@@ -270,12 +270,12 @@ public final class RealConnection extends Http2Connection.Listener implements Co
           .socket(socket, route.address().url().host(), source, sink)
           .listener(this)
           .build();
-      http2Connection.start();
+      http2Connection.start();// 完成握手后，开始连接发送Hello包
     }
   }
 
   /**
-   * TLS连接配置、验证
+   * TLS连接配置、验证、握手
    * @param connectionSpecSelector
    * @throws IOException
    */
@@ -482,7 +482,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       return !http2Connection.isShutdown();
     }
 
-    // 如果不为get
+    // 如果请求不为get方法
     if (doExtensiveChecks) {
       try {
         int readTimeout = socket.getSoTimeout();

@@ -42,13 +42,13 @@ public final class CallServerInterceptor implements Interceptor {
     long sentRequestMillis = System.currentTimeMillis();// 发送前标记时间点
     httpCodec.writeRequestHeaders(request);// 请求头设置HTTP编码
 
-    Response.Builder responseBuilder = null; // 清空响应
+    Response.Builder responseBuilder = null; // 初始化响应
     if (HttpMethod.permitsRequestBody(request.method()) && request.body() != null) { // 校验请求体及其方法是否可以携带请求体
       // If there's a "Expect: 100-continue" header on the request, wait for a "HTTP/1.1 100
       // Continue" response before transmitting the request body. If we don't get that, return what
       // we did get (such as a 4xx response) without ever transmitting the request body.
       // 在发送请求体之前，先发送一个请求, 包含一个Expect:100-continue, 询问Server使用愿意接受数据
-      // 接收到Server返回的100-continue应答以后, 才把数据发送给Server
+      // 接收到Server返回的100-continue应答以后, 表示一切正常，应该继续发送请求
       if ("100-continue".equalsIgnoreCase(request.header("Expect"))) {
         httpCodec.flushRequest();
         responseBuilder = httpCodec.readResponseHeaders(true);
@@ -59,7 +59,7 @@ public final class CallServerInterceptor implements Interceptor {
       if (responseBuilder == null) {
         Sink requestBodyOut = httpCodec.createRequestBody(request, request.body().contentLength());
         BufferedSink bufferedRequestBody = Okio.buffer(requestBodyOut);// 新建缓冲区
-        request.body().writeTo(bufferedRequestBody);// 缓存区的请求体写入请求
+        request.body().writeTo(bufferedRequestBody);// 缓存区的请求体写入请求，即发送请求
         bufferedRequestBody.close();// 关闭请求体缓冲区
       }
     }
@@ -92,7 +92,7 @@ public final class CallServerInterceptor implements Interceptor {
 
     if ("close".equalsIgnoreCase(response.request().header("Connection"))
         || "close".equalsIgnoreCase(response.header("Connection"))) {
-      streamAllocation.noNewStreams(); // 关闭连接
+      streamAllocation.noNewStreams(); // 连接上不可再增加stream
     }
 
     // 无响应body

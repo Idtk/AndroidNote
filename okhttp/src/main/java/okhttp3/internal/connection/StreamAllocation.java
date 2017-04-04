@@ -129,7 +129,7 @@ public final class StreamAllocation {
           connectionRetryEnabled);
 
       // If this is a brand new connection, we can skip the extensive health checks.
-      synchronized (connectionPool) {
+      synchronized (connectionPool) {// 增加锁保护
         if (candidate.successCount == 0) { // 通过成功数量为0，判断是一个新的连接，则跳过之后的可用性检查
           return candidate;
         }
@@ -149,6 +149,7 @@ public final class StreamAllocation {
   /**
    * Returns a connection to host a new stream. This prefers the existing connection if it exists,
    * then the pool, finally building a new connection.
+   *
    * 获取可用的候选连接
    */
   private RealConnection findConnection(int connectTimeout, int readTimeout, int writeTimeout,
@@ -189,11 +190,12 @@ public final class StreamAllocation {
       route = selectedRoute;
       refusedStreamCount = 0;
       result = new RealConnection(connectionPool, selectedRoute);// 创建一个连接
-      acquire(result);// 增加到当前stream的引用列表。并把连接赋值给当前实例的connection参数
+      acquire(result);// 把当前stream增加到connect，并把局部变量result的引用交给全局变量connect
       if (canceled) throw new IOException("Canceled");
     }
 
     // Do TCP + TLS handshakes. This is a blocking operation.
+    // 创建隧道，选择协议，完成握手
     result.connect(connectTimeout, readTimeout, writeTimeout, connectionRetryEnabled);
     routeDatabase().connected(result.route());
 
@@ -290,6 +292,7 @@ public final class StreamAllocation {
         release(connection);
         if (connection.allocations.isEmpty()) {
           connection.idleAtNanos = System.nanoTime();
+          // 调用ConnectionPool.connectionBecameIdle, 检查连接是否闲置
           if (Internal.instance.connectionBecameIdle(connectionPool, connection)) {
             socket = connection.socket();
           }
@@ -354,6 +357,7 @@ public final class StreamAllocation {
   /**
    * Use this allocation to hold {@code connection}. Each call to this must be paired with a call to
    * {@link #release} on the same connection.
+   * 连接增加一个stream
    */
   public void acquire(RealConnection connection) {
     assert (Thread.holdsLock(connectionPool));

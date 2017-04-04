@@ -21,6 +21,9 @@ import okio.ForwardingSink;
 import okio.Sink;
 
 /** A sink that never throws IOExceptions, even if the underlying sink does. */
+/**
+ * 捕获了IOExceptions的sink
+ */
 class FaultHidingSink extends ForwardingSink {
   private boolean hasErrors;
 

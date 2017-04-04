@@ -46,7 +46,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * header for conditional GETs) or warnings to the cached response (if the cached data is
  * potentially stale).
  *
- * 根据给定的请求和响应缓存，判断出是否需要使用缓存和网络
+ * 根据给定的请求和响应缓存，判断出是否需要使用缓存和网络，在一些情况下，可以达到节省带宽和时间的效果
  */
 public final class CacheStrategy {
   /** The request to send on the network, or null if this call doesn't use the network. */

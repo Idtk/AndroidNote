@@ -27,6 +27,9 @@ import okhttp3.internal.connection.StreamAllocation;
 /**
  * A concrete interceptor chain that carries the entire interceptor chain: all application
  * interceptors, the OkHttp core, all network interceptors, and finally the network caller.
+ *
+ * 持有完整的拦截器链列表，各个拦截器通过持有RealInterceptorChain类，
+ * 来不断调用proceed方法，继而调用下一个拦截器的intercept的方法
  */
 public final class RealInterceptorChain implements Interceptor.Chain {
   private final List<Interceptor> interceptors;
@@ -42,7 +45,7 @@ public final class RealInterceptorChain implements Interceptor.Chain {
     this.interceptors = interceptors;
     this.connection = connection;
     this.streamAllocation = streamAllocation;// stream分配
-    this.httpCodec = httpCodec;// 编码
+    this.httpCodec = httpCodec;// 编码解码方式
     this.index = index;// 位置计数
     this.request = request;
   }
@@ -86,10 +89,11 @@ public final class RealInterceptorChain implements Interceptor.Chain {
     }
 
     // Call the next interceptor in the chain.
+    // 调用下一个拦截器
     RealInterceptorChain next = new RealInterceptorChain(
         interceptors, streamAllocation, httpCodec, connection, index + 1, request);
     Interceptor interceptor = interceptors.get(index);// 获取拦截器
-    Response response = interceptor.intercept(next);
+    Response response = interceptor.intercept(next);// intercept方法执行
 
     // Confirm that the next interceptor made its required call to chain.proceed().
     if (httpCodec != null && index + 1 < interceptors.size() && next.calls != 1) {

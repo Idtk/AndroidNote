@@ -48,7 +48,7 @@ import static okhttp3.internal.http2.Header.TARGET_PATH;
 import static okhttp3.internal.http2.Header.TARGET_SCHEME;
 
 /** Encode requests and responses using HTTP/2 frames. */
-// 使用HTTP2编码格式定制的请求响应
+// 使用HTTP2格式编码解码请求和响应
 public final class Http2Codec implements HttpCodec {
   private static final ByteString CONNECTION = ByteString.encodeUtf8("connection");
   private static final ByteString HOST = ByteString.encodeUtf8("host");
@@ -103,8 +103,8 @@ public final class Http2Codec implements HttpCodec {
     if (stream != null) return;
 
     boolean hasRequestBody = request.body() != null;
-    List<Header> requestHeaders = http2HeadersList(request);
-    stream = connection.newStream(requestHeaders, hasRequestBody);
+    List<Header> requestHeaders = http2HeadersList(request);// 请求头格式整理
+    stream = connection.newStream(requestHeaders, hasRequestBody);// 生成一个新的本地stream
     stream.readTimeout().timeout(client.readTimeoutMillis(), TimeUnit.MILLISECONDS);
     stream.writeTimeout().timeout(client.writeTimeoutMillis(), TimeUnit.MILLISECONDS);
   }
@@ -117,6 +117,12 @@ public final class Http2Codec implements HttpCodec {
     stream.getSink().close();
   }
 
+  /**
+   * 获取返回的响应，并解码
+   * @param expectContinue true to return null if this is an intermediate response with a "100"
+   * @return
+   * @throws IOException
+   */
   @Override public Response.Builder readResponseHeaders(boolean expectContinue) throws IOException {
     List<Header> headers = stream.takeResponseHeaders();
     Response.Builder responseBuilder = readHttp2HeadersList(headers);
@@ -126,6 +132,11 @@ public final class Http2Codec implements HttpCodec {
     return responseBuilder;
   }
 
+  /**
+   * 将header转换为http2格式
+   * @param request
+   * @return
+   */
   public static List<Header> http2HeadersList(Request request) {
     Headers headers = request.headers();
     List<Header> result = new ArrayList<>(headers.size() + 4);
@@ -187,6 +198,12 @@ public final class Http2Codec implements HttpCodec {
         .headers(headersBuilder.build());
   }
 
+  /**
+   * 获取响应body，组合了读取的响应流和header
+   * @param response
+   * @return
+   * @throws IOException
+   */
   @Override public ResponseBody openResponseBody(Response response) throws IOException {
     Source source = new StreamFinishingSource(stream.getSource());
     return new RealResponseBody(response.headers(), Okio.buffer(source));

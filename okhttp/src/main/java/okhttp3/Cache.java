@@ -134,7 +134,7 @@ import okio.Source;
  * {@link CacheControl#FORCE_CACHE} that address the use cases above.
  *
  *
- * 本地的硬盘缓存，在一些情况下达到节省宽带和时间的效果
+ * 本地缓存，在一些情况下可以使用缓存来节省宽带和时间
  */
 public final class Cache implements Closeable, Flushable {
   private static final int VERSION = 201105;
