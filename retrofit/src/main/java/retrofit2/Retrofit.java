@@ -132,17 +132,21 @@ public final class Retrofit {
     // 动态代理，啦啦啦
     return (T) Proxy.newProxyInstance(service.getClassLoader(), new Class<?>[] { service },
         new InvocationHandler() {
+          // platform 可以分辨出你是在android，还是java8里面玩耍
           private final Platform platform = Platform.get();
 
           @Override public Object invoke(Object proxy, Method method, Object[] args)
               throws Throwable {
             // If the method is a method from Object then defer to normal invocation.
+            // 这里是个搞事情的invoke，Object方法都走这里，比如equals、toString、hashCode什么的
             if (method.getDeclaringClass() == Object.class) {
-              return method.invoke(this, args);// 这里是个搞事情的invoke
+              return method.invoke(this, args);
             }
+            // 有时候java8会来玩玩，他会从这里跑掉
             if (platform.isDefaultMethod(method)) {
               return platform.invokeDefaultMethod(method, service, proxy, args);
             }
+            // 解析注解的，这个是正事
             ServiceMethod<Object, Object> serviceMethod =
                 (ServiceMethod<Object, Object>) loadServiceMethod(method);
             OkHttpCall<Object> okHttpCall = new OkHttpCall<>(serviceMethod, args);
@@ -160,14 +164,22 @@ public final class Retrofit {
     }
   }
 
+  /**
+   * 这里根据方法，来加载一个ServiceMethod
+   * @param method
+   * @return
+   */
   ServiceMethod<?, ?> loadServiceMethod(Method method) {
+    // 从缓存里面取出，如果有的话，直接返回好了
     ServiceMethod<?, ?> result = serviceMethodCache.get(method);
     if (result != null) return result;
 
     synchronized (serviceMethodCache) {
       result = serviceMethodCache.get(method);
       if (result == null) {
+        // 为null的话，新建一个，进去看看怎么搞的
         result = new ServiceMethod.Builder<>(this, method).build();
+        // 新建的ServiceMethod加到缓存列表里面
         serviceMethodCache.put(method, result);
       }
     }

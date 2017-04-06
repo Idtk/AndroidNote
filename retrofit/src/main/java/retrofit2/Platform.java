@@ -31,16 +31,22 @@ class Platform {
     return PLATFORM;
   }
 
+  /**
+   * 先检查是不是找到了android的包，没有再看java8的，先找到就先返回跳出了
+   * @return Platform类的一种实现
+   */
   private static Platform findPlatform() {
     try {
       Class.forName("android.os.Build");
       if (Build.VERSION.SDK_INT != 0) {
+        // 这里是我们需要的Android，么么哒
         return new Android();
       }
     } catch (ClassNotFoundException ignored) {
     }
     try {
       Class.forName("java.util.Optional");
+      // 这里就是java8，我们之前在retrofit.create提到过
       return new Java8();
     } catch (ClassNotFoundException ignored) {
     }

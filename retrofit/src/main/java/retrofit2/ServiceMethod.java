@@ -149,12 +149,18 @@ final class ServiceMethod<R, T> {
     Converter<ResponseBody, T> responseConverter;
     CallAdapter<T, R> callAdapter;
 
+    /**
+     * 这里以官方的例子为例
+     * http://square.github.io/retrofit/
+     * @param retrofit
+     * @param method
+     */
     Builder(Retrofit retrofit, Method method) {
       this.retrofit = retrofit;
-      this.method = method;
-      this.methodAnnotations = method.getAnnotations();
-      this.parameterTypes = method.getGenericParameterTypes();
-      this.parameterAnnotationsArray = method.getParameterAnnotations();
+      this.method = method;// listRepos
+      this.methodAnnotations = method.getAnnotations();// 注解，@GET
+      this.parameterTypes = method.getGenericParameterTypes();// 参数类型，Call<List<Repo>>
+      this.parameterAnnotationsArray = method.getParameterAnnotations();// 参数注解，@Path
     }
 
     public ServiceMethod build() {
