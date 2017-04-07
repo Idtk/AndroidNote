@@ -228,8 +228,9 @@ public final class Retrofit {
     checkNotNull(returnType, "returnType == null");
     checkNotNull(annotations, "annotations == null");
 
-    int start = adapterFactories.indexOf(skipPast) + 1;
+    int start = adapterFactories.indexOf(skipPast) + 1;// 从上一次为null的地方开始
     for (int i = start, count = adapterFactories.size(); i < count; i++) {
+      // 一般为ExecutorCallAdapterFactory
       CallAdapter<?, ?> adapter = adapterFactories.get(i).get(returnType, annotations, this);
       if (adapter != null) {
         return adapter;
@@ -337,6 +338,7 @@ public final class Retrofit {
 
     int start = converterFactories.indexOf(skipPast) + 1;
     for (int i = start, count = converterFactories.size(); i < count; i++) {
+      // 一些Converter接口的实现，比如常用的GsonConverterFactory
       Converter<ResponseBody, ?> converter =
           converterFactories.get(i).responseBodyConverter(type, annotations, this);
       if (converter != null) {

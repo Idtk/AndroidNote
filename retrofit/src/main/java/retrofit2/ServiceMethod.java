@@ -164,24 +164,24 @@ final class ServiceMethod<R, T> {
     }
 
     public ServiceMethod build() {
-      callAdapter = createCallAdapter();
+      callAdapter = createCallAdapter();// ->获取CallAdapter的实现
       responseType = callAdapter.responseType();
       if (responseType == Response.class || responseType == okhttp3.Response.class) {
         throw methodError("'"
             + Utils.getRawType(responseType).getName()
             + "' is not a valid response body type. Did you mean ResponseBody?");
       }
-      responseConverter = createResponseConverter();
+      responseConverter = createResponseConverter();// 响应的转换工厂，如GsonConverterFactory
 
       for (Annotation annotation : methodAnnotations) {
-        parseMethodAnnotation(annotation);
+        parseMethodAnnotation(annotation);// 真正解析注解的地方来了
       }
 
       if (httpMethod == null) {
         throw methodError("HTTP method annotation is required (e.g., @GET, @POST, etc.).");
       }
 
-      if (!hasBody) {
+      if (!hasBody) {// POST方法需要有body或者表单
         if (isMultipart) {
           throw methodError(
               "Multipart can only be specified on HTTP methods with request body (e.g., @POST).");
@@ -191,6 +191,8 @@ final class ServiceMethod<R, T> {
               + "request body (e.g., @POST).");
         }
       }
+
+      // 上面是请求方法、header、body，下面是请求参数
 
       int parameterCount = parameterAnnotationsArray.length;
       parameterHandlers = new ParameterHandler<?>[parameterCount];
@@ -227,24 +229,27 @@ final class ServiceMethod<R, T> {
 
     private CallAdapter<T, R> createCallAdapter() {
       Type returnType = method.getGenericReturnType();
+      // 检查方法的返回类型，泛型、通配符类型将会报错
       if (Utils.hasUnresolvableType(returnType)) {
         throw methodError(
             "Method return type must not include a type variable or wildcard: %s", returnType);
       }
+      // void返回类型，也不可以
       if (returnType == void.class) {
         throw methodError("Service methods cannot return void.");
       }
-      Annotation[] annotations = method.getAnnotations();
+      Annotation[] annotations = method.getAnnotations();// 拿到注解
       try {
         //noinspection unchecked
-        return (CallAdapter<T, R>) retrofit.callAdapter(returnType, annotations);
+        return (CallAdapter<T, R>) retrofit.callAdapter(returnType, annotations);// ->
       } catch (RuntimeException e) { // Wide exception range because factories are user code.
         throw methodError(e, "Unable to create call adapter for %s", returnType);
       }
     }
 
     /**
-     * 来解析
+     * 解析注解，呜啦啦
+     * 通过判断注解类型来解析
      * @param annotation
      */
     private void parseMethodAnnotation(Annotation annotation) {
@@ -269,11 +274,12 @@ final class ServiceMethod<R, T> {
         HTTP http = (HTTP) annotation;
         parseHttpMethodAndPath(http.method(), http.path(), http.hasBody());
       } else if (annotation instanceof retrofit2.http.Headers) {
-        String[] headersToParse = ((retrofit2.http.Headers) annotation).value();
+        String[] headersToParse = ((retrofit2.http.Headers) annotation).value();// 可能有多个http headr属性键值对
         if (headersToParse.length == 0) {
           throw methodError("@Headers annotation is empty.");
         }
         headers = parseHeaders(headersToParse);
+      // post要么提交表单，要么提交body
       } else if (annotation instanceof Multipart) {
         if (isFormEncoded) {
           throw methodError("Only one encoding annotation is allowed.");
@@ -288,13 +294,13 @@ final class ServiceMethod<R, T> {
     }
 
     private void parseHttpMethodAndPath(String httpMethod, String value, boolean hasBody) {
-      if (this.httpMethod != null) {
+      if (this.httpMethod != null) {// 已经赋值过了
         throw methodError("Only one HTTP method is allowed. Found: %s and %s.",
             this.httpMethod, httpMethod);
       }
       this.httpMethod = httpMethod;
       this.hasBody = hasBody;
-
+      // value为设置注解方法时候，设置的值，官方例子中的users/{user}/repos or user
       if (value.isEmpty()) {
         return;
       }
@@ -303,8 +309,9 @@ final class ServiceMethod<R, T> {
       int question = value.indexOf('?');
       if (question != -1 && question < value.length() - 1) {
         // Ensure the query string does not have any named parameters.
-        String queryParams = value.substring(question + 1);
-        Matcher queryParamMatcher = PARAM_URL_REGEX.matcher(queryParams);
+        String queryParams = value.substring(question + 1);// 查询条件起点
+        Matcher queryParamMatcher = PARAM_URL_REGEX.matcher(queryParams);//匹配 {user} 这种，但是又在?之后，不应该放在@GET里面
+        // 查询条件应该用@Query
         if (queryParamMatcher.find()) {
           throw methodError("URL query string \"%s\" must not have replace block. "
               + "For dynamic query parameters use @Query.", queryParams);
@@ -318,7 +325,7 @@ final class ServiceMethod<R, T> {
     private Headers parseHeaders(String[] headers) {
       Headers.Builder builder = new Headers.Builder();
       for (String header : headers) {
-        int colon = header.indexOf(':');
+        int colon = header.indexOf(':');// 分割
         if (colon == -1 || colon == 0 || colon == header.length() - 1) {
           throw methodError(
               "@Headers value must be in the form \"Name: Value\". Found: \"%s\"", header);
@@ -326,13 +333,13 @@ final class ServiceMethod<R, T> {
         String headerName = header.substring(0, colon);
         String headerValue = header.substring(colon + 1).trim();
         if ("Content-Type".equalsIgnoreCase(headerName)) {
-          MediaType type = MediaType.parse(headerValue);
+          MediaType type = MediaType.parse(headerValue);// MIME类型
           if (type == null) {
             throw methodError("Malformed content type: %s", headerValue);
           }
           contentType = type;
         } else {
-          builder.add(headerName, headerValue);
+          builder.add(headerName, headerValue);// 键值对，增加到Headers.Builder
         }
       }
       return builder.build();
@@ -778,7 +785,7 @@ final class ServiceMethod<R, T> {
   static Set<String> parsePathParameters(String path) {
     Matcher m = PARAM_URL_REGEX.matcher(path);
     Set<String> patterns = new LinkedHashSet<>();
-    while (m.find()) {
+    while (m.find()) {// 匹配的一个个添加到patterns里面，例如{user}
       patterns.add(m.group(1));
     }
     return patterns;
