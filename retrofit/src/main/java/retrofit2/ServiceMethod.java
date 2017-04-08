@@ -159,7 +159,7 @@ final class ServiceMethod<R, T> {
       this.retrofit = retrofit;
       this.method = method;// listRepos
       this.methodAnnotations = method.getAnnotations();// 注解，@GET
-      this.parameterTypes = method.getGenericParameterTypes();// 参数类型，Call<List<Repo>>
+      this.parameterTypes = method.getGenericParameterTypes();// 参数类型，String
       this.parameterAnnotationsArray = method.getParameterAnnotations();// 参数注解，@Path
     }
 
@@ -192,23 +192,25 @@ final class ServiceMethod<R, T> {
         }
       }
 
-      // 上面是请求方法、header、body，下面是请求参数
+      // 上面是请求方法，下面是请求参数
 
       int parameterCount = parameterAnnotationsArray.length;
+      // ParameterHandler的实现类有很多，包括了各种参数，@Field、@Query等
       parameterHandlers = new ParameterHandler<?>[parameterCount];
       for (int p = 0; p < parameterCount; p++) {
-        Type parameterType = parameterTypes[p];
+        Type parameterType = parameterTypes[p];// 参数类型
+        // 和之前一样的泛型、通配符检查
         if (Utils.hasUnresolvableType(parameterType)) {
           throw parameterError(p, "Parameter type must not include a type variable or wildcard: %s",
               parameterType);
         }
 
-        Annotation[] parameterAnnotations = parameterAnnotationsArray[p];
+        Annotation[] parameterAnnotations = parameterAnnotationsArray[p];// 参数的注解集合
         if (parameterAnnotations == null) {
           throw parameterError(p, "No Retrofit annotation found.");
         }
 
-        parameterHandlers[p] = parseParameter(p, parameterType, parameterAnnotations);
+        parameterHandlers[p] = parseParameter(p, parameterType, parameterAnnotations);// 生成了对应的参数注解ParameterHandler实现类
       }
 
       if (relativeUrl == null && !gotUrl) {
@@ -322,7 +324,7 @@ final class ServiceMethod<R, T> {
       this.relativeUrlParamNames = parsePathParameters(value);
     }
 
-    private Headers parseHeaders(String[] headers) {
+    private Headers parseHeaders(String[] headers) {// 这是方法注解headers，与参数注解header不同
       Headers.Builder builder = new Headers.Builder();
       for (String header : headers) {
         int colon = header.indexOf(':');// 分割
@@ -356,6 +358,7 @@ final class ServiceMethod<R, T> {
           continue;
         }
 
+        // retrofit，对于一个参数不允许有多个注解
         if (result != null) {
           throw parameterError(p, "Multiple Retrofit annotations found, only one allowed.");
         }
@@ -382,12 +385,14 @@ final class ServiceMethod<R, T> {
         if (gotQuery) {
           throw parameterError(p, "A @Url parameter must not come after a @Query");
         }
+        // 要有相对路径，其实是要有一个请求方法吧
         if (relativeUrl != null) {
           throw parameterError(p, "@Url cannot be used with @%s URL", httpMethod);
         }
 
-        gotUrl = true;
+        gotUrl = true;// 这里置为true了，因为这个参数就是url了
 
+        // 各种url类型
         if (type == HttpUrl.class
             || type == String.class
             || type == URI.class
@@ -412,9 +417,9 @@ final class ServiceMethod<R, T> {
 
         Path path = (Path) annotation;
         String name = path.value();
-        validatePathName(p, name);
+        validatePathName(p, name);// 简单的检查
 
-        Converter<?, String> converter = retrofit.stringConverter(type, annotations);
+        Converter<?, String> converter = retrofit.stringConverter(type, annotations);// 转换成字符串
         return new ParameterHandler.Path<>(name, converter, path.encoded());
 
       } else if (annotation instanceof Query) {
@@ -422,8 +427,9 @@ final class ServiceMethod<R, T> {
         String name = query.value();
         boolean encoded = query.encoded();
 
-        Class<?> rawParameterType = Utils.getRawType(type);
+        Class<?> rawParameterType = Utils.getRawType(type);// 返回基础的类
         gotQuery = true;
+        // 可以迭代，Collection
         if (Iterable.class.isAssignableFrom(rawParameterType)) {
           if (!(type instanceof ParameterizedType)) {
             throw parameterError(p, rawParameterType.getSimpleName()
@@ -432,12 +438,12 @@ final class ServiceMethod<R, T> {
                 + "<String>)");
           }
           ParameterizedType parameterizedType = (ParameterizedType) type;
-          Type iterableType = Utils.getParameterUpperBound(0, parameterizedType);
+          Type iterableType = Utils.getParameterUpperBound(0, parameterizedType);// 返回基本类型
           Converter<?, String> converter =
               retrofit.stringConverter(iterableType, annotations);
           return new ParameterHandler.Query<>(name, converter, encoded).iterable();
         } else if (rawParameterType.isArray()) {
-          Class<?> arrayComponentType = boxIfPrimitive(rawParameterType.getComponentType());
+          Class<?> arrayComponentType = boxIfPrimitive(rawParameterType.getComponentType());// 如果是基本类型，自动装箱
           Converter<?, String> converter =
               retrofit.stringConverter(arrayComponentType, annotations);
           return new ParameterHandler.Query<>(name, converter, encoded).array();
@@ -481,13 +487,13 @@ final class ServiceMethod<R, T> {
         if (!Map.class.isAssignableFrom(rawParameterType)) {
           throw parameterError(p, "@QueryMap parameter type must be Map.");
         }
-        Type mapType = Utils.getSupertype(type, rawParameterType, Map.class);
+        Type mapType = Utils.getSupertype(type, rawParameterType, Map.class);// Map 可能多层套
         if (!(mapType instanceof ParameterizedType)) {
           throw parameterError(p, "Map must include generic types (e.g., Map<String, String>)");
         }
         ParameterizedType parameterizedType = (ParameterizedType) mapType;
         Type keyType = Utils.getParameterUpperBound(0, parameterizedType);
-        if (String.class != keyType) {
+        if (String.class != keyType) {// 键要求为字符串
           throw parameterError(p, "@QueryMap keys must be of type String: " + keyType);
         }
         Type valueType = Utils.getParameterUpperBound(1, parameterizedType);
@@ -554,7 +560,7 @@ final class ServiceMethod<R, T> {
 
         gotField = true;
 
-        Class<?> rawParameterType = Utils.getRawType(type);
+        Class<?> rawParameterType = Utils.getRawType(type);// 返回基本类型
         if (Iterable.class.isAssignableFrom(rawParameterType)) {
           if (!(type instanceof ParameterizedType)) {
             throw parameterError(p, rawParameterType.getSimpleName()
@@ -563,12 +569,12 @@ final class ServiceMethod<R, T> {
                 + "<String>)");
           }
           ParameterizedType parameterizedType = (ParameterizedType) type;
-          Type iterableType = Utils.getParameterUpperBound(0, parameterizedType);
+          Type iterableType = Utils.getParameterUpperBound(0, parameterizedType);// 返回基本类型
           Converter<?, String> converter =
               retrofit.stringConverter(iterableType, annotations);
           return new ParameterHandler.Field<>(name, converter, encoded).iterable();
         } else if (rawParameterType.isArray()) {
-          Class<?> arrayComponentType = boxIfPrimitive(rawParameterType.getComponentType());
+          Class<?> arrayComponentType = boxIfPrimitive(rawParameterType.getComponentType());// 如果是基本类型，自动装箱
           Converter<?, String> converter =
               retrofit.stringConverter(arrayComponentType, annotations);
           return new ParameterHandler.Field<>(name, converter, encoded).array();
@@ -612,7 +618,7 @@ final class ServiceMethod<R, T> {
 
         String partName = part.value();
         Class<?> rawParameterType = Utils.getRawType(type);
-        if (partName.isEmpty()) {
+        if (partName.isEmpty()) {// 直接写了个属性，没用@Part预定义的属性情况下
           if (Iterable.class.isAssignableFrom(rawParameterType)) {
             if (!(type instanceof ParameterizedType)) {
               throw parameterError(p, rawParameterType.getSimpleName()
@@ -634,7 +640,7 @@ final class ServiceMethod<R, T> {
                   "@Part annotation must supply a name or use MultipartBody.Part parameter type.");
             }
             return ParameterHandler.RawPart.INSTANCE.array();
-          } else if (MultipartBody.Part.class.isAssignableFrom(rawParameterType)) {
+          } else if (MultipartBody.Part.class.isAssignableFrom(rawParameterType)) {// 上传文件会用到
             return ParameterHandler.RawPart.INSTANCE;
           } else {
             throw parameterError(p,
@@ -643,7 +649,7 @@ final class ServiceMethod<R, T> {
         } else {
           Headers headers =
               Headers.of("Content-Disposition", "form-data; name=\"" + partName + "\"",
-                  "Content-Transfer-Encoding", part.encoding());
+                  "Content-Transfer-Encoding", part.encoding());// 属性值放到header里面去
 
           if (Iterable.class.isAssignableFrom(rawParameterType)) {
             if (!(type instanceof ParameterizedType)) {
@@ -713,7 +719,7 @@ final class ServiceMethod<R, T> {
         return new ParameterHandler.PartMap<>(valueConverter, partMap.encoding());
 
       } else if (annotation instanceof Body) {
-        if (isFormEncoded || isMultipart) {
+        if (isFormEncoded || isMultipart) {// 这两种情况和body重复了,之前在方法注解的里面判断过
           throw parameterError(p,
               "@Body parameters cannot be used with form or multi-part encoding.");
         }
@@ -735,6 +741,11 @@ final class ServiceMethod<R, T> {
       return null; // Not a Retrofit annotation.
     }
 
+    /**
+     * 基本的检查，子母和数字组成的name，并且没有和方法相对路径的中类似{user}的这种参数重复
+     * @param p
+     * @param name
+     */
     private void validatePathName(int p, String name) {
       if (!PARAM_NAME_REGEX.matcher(name).matches()) {
         throw parameterError(p, "@Path parameter name must match %s. Found: %s",
