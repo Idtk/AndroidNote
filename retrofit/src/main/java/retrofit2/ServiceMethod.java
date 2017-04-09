@@ -610,7 +610,7 @@ final class ServiceMethod<R, T> {
         return new ParameterHandler.FieldMap<>(valueConverter, ((FieldMap) annotation).encoded());
 
       } else if (annotation instanceof Part) {
-        if (!isMultipart) {
+        if (!isMultipart) {// 在方法注解中需要设置@Multipart
           throw parameterError(p, "@Part parameters can only be used with multipart encoding.");
         }
         Part part = (Part) annotation;
@@ -618,7 +618,7 @@ final class ServiceMethod<R, T> {
 
         String partName = part.value();
         Class<?> rawParameterType = Utils.getRawType(type);
-        if (partName.isEmpty()) {// 直接写了个属性，没用@Part预定义的属性情况下
+        if (partName.isEmpty()) {// 这种情况一般是MultipartBody.Part
           if (Iterable.class.isAssignableFrom(rawParameterType)) {
             if (!(type instanceof ParameterizedType)) {
               throw parameterError(p, rawParameterType.getSimpleName()
@@ -649,7 +649,7 @@ final class ServiceMethod<R, T> {
         } else {
           Headers headers =
               Headers.of("Content-Disposition", "form-data; name=\"" + partName + "\"",
-                  "Content-Transfer-Encoding", part.encoding());// 属性值放到header里面去
+                  "Content-Transfer-Encoding", part.encoding());// 这里的headers之后可以和值 requestBody组合成MultipartBody
 
           if (Iterable.class.isAssignableFrom(rawParameterType)) {
             if (!(type instanceof ParameterizedType)) {
@@ -665,7 +665,7 @@ final class ServiceMethod<R, T> {
                   + "include a part name in the annotation.");
             }
             Converter<?, RequestBody> converter =
-                retrofit.requestBodyConverter(iterableType, annotations, methodAnnotations);
+                retrofit.requestBodyConverter(iterableType, annotations, methodAnnotations);// 转换成requestBody
             return new ParameterHandler.Part<>(headers, converter).iterable();
           } else if (rawParameterType.isArray()) {
             Class<?> arrayComponentType = boxIfPrimitive(rawParameterType.getComponentType());

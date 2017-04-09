@@ -177,7 +177,7 @@ public final class Retrofit {
     synchronized (serviceMethodCache) {
       result = serviceMethodCache.get(method);
       if (result == null) {
-        // 为null的话，新建一个，进去看看怎么搞的
+        // 为null的话，解析方法的注解和返回类型、参数的注解he参数类型，新建一个ServiceMethod
         result = new ServiceMethod.Builder<>(this, method).build();
         // 新建的ServiceMethod加到缓存列表里面
         serviceMethodCache.put(method, result);
@@ -289,7 +289,7 @@ public final class Retrofit {
 
     int start = converterFactories.indexOf(skipPast) + 1;
     for (int i = start, count = converterFactories.size(); i < count; i++) {
-      Converter.Factory factory = converterFactories.get(i);
+      Converter.Factory factory = converterFactories.get(i);// 比如实现类 GsonConverterFactory
       Converter<?, RequestBody> converter =
           factory.requestBodyConverter(type, parameterAnnotations, methodAnnotations, this);
       if (converter != null) {
