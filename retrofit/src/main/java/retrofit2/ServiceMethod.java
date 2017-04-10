@@ -107,7 +107,7 @@ final class ServiceMethod<R, T> {
     }
 
     for (int p = 0; p < argumentCount; p++) {
-      handlers[p].apply(requestBuilder, args[p]);
+      handlers[p].apply(requestBuilder, args[p]);// 组装requestBuilder
     }
 
     return requestBuilder.build();
@@ -164,7 +164,7 @@ final class ServiceMethod<R, T> {
     }
 
     public ServiceMethod build() {
-      callAdapter = createCallAdapter();// ->获取CallAdapter的实现
+      callAdapter = createCallAdapter();// ->获取CallAdapter的实现，一般为ExecutorCallAdapterFactory.get实现
       responseType = callAdapter.responseType();
       if (responseType == Response.class || responseType == okhttp3.Response.class) {
         throw methodError("'"

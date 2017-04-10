@@ -24,6 +24,9 @@ import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 import org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement;
 
+/**
+ * 根据获取类名，来判断是否为Android
+ */
 class Platform {
   private static final Platform PLATFORM = findPlatform();
 

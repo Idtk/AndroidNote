@@ -578,7 +578,7 @@ public final class Retrofit {
 
       okhttp3.Call.Factory callFactory = this.callFactory;
       if (callFactory == null) {
-        callFactory = new OkHttpClient();
+        callFactory = new OkHttpClient();// 新建Client，留到之后newCall什么的
       }
 
       Executor callbackExecutor = this.callbackExecutor;

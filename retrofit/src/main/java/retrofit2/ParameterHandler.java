@@ -24,6 +24,10 @@ import okhttp3.RequestBody;
 
 import static retrofit2.Utils.checkNotNull;
 
+/**
+ * 解析参数注解
+ * @param <T>
+ */
 abstract class ParameterHandler<T> {
   abstract void apply(RequestBuilder builder, T value) throws IOException;
 

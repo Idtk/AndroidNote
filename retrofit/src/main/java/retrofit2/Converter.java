@@ -35,6 +35,9 @@ import retrofit2.http.QueryMap;
  * Convert objects to and from their representation in HTTP. Instances are created by {@linkplain
  * Factory a factory} which is {@linkplain Retrofit.Builder#addConverterFactory(Factory) installed}
  * into the {@link Retrofit} instance.
+ *
+ * 处理ResponseBody、RequestBody、String类型转换
+ * 比如 GsonConverterFactory
  */
 public interface Converter<F, T> {
   T convert(F value) throws IOException;

@@ -30,6 +30,8 @@ import okhttp3.Request;
  * working as designed.
  *
  * @param <T> Successful response body type.
+ *
+ * 请求的执行及响应回调处理
  */
 public interface Call<T> extends Cloneable {
   /**

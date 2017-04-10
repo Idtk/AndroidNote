@@ -22,14 +22,17 @@ import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.http.Streaming;
 
+/**
+ * Converter.Factory默认实现
+ */
 final class BuiltInConverters extends Converter.Factory {
   @Override
   public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations,
       Retrofit retrofit) {
     if (type == ResponseBody.class) {
       return Utils.isAnnotationPresent(annotations, Streaming.class)
-          ? StreamingResponseBodyConverter.INSTANCE
-          : BufferingResponseBodyConverter.INSTANCE;
+          ? StreamingResponseBodyConverter.INSTANCE // stream
+          : BufferingResponseBodyConverter.INSTANCE; // buffer
     }
     if (type == Void.class) {
       return VoidResponseBodyConverter.INSTANCE;
@@ -46,6 +49,7 @@ final class BuiltInConverters extends Converter.Factory {
     return null;
   }
 
+  // null
   static final class VoidResponseBodyConverter implements Converter<ResponseBody, Void> {
     static final VoidResponseBodyConverter INSTANCE = new VoidResponseBodyConverter();
 
@@ -54,7 +58,7 @@ final class BuiltInConverters extends Converter.Factory {
       return null;
     }
   }
-
+  // request stream
   static final class RequestBodyConverter implements Converter<RequestBody, RequestBody> {
     static final RequestBodyConverter INSTANCE = new RequestBodyConverter();
 
@@ -86,6 +90,7 @@ final class BuiltInConverters extends Converter.Factory {
     }
   }
 
+  // String
   static final class ToStringConverter implements Converter<Object, String> {
     static final ToStringConverter INSTANCE = new ToStringConverter();
 

@@ -23,6 +23,9 @@ import okhttp3.Request;
 
 import static retrofit2.Utils.checkNotNull;
 
+/**
+ * Android的CallAdapter.Factory、Call实现
+ */
 final class ExecutorCallAdapterFactory extends CallAdapter.Factory {
   final Executor callbackExecutor;
 
@@ -41,7 +44,7 @@ final class ExecutorCallAdapterFactory extends CallAdapter.Factory {
         return responseType;
       }
 
-      @Override public Call<Object> adapt(Call<Object> call) {
+      @Override public Call<Object> adapt(Call<Object> call) {// Retrofit动态代理serviceMethod.callAdapter.adapt(okHttpCall);调用到这里
         return new ExecutorCallbackCall<>(callbackExecutor, call);
       }
     };

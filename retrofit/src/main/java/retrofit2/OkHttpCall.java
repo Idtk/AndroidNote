@@ -24,6 +24,9 @@ import okio.BufferedSource;
 import okio.ForwardingSource;
 import okio.Okio;
 
+/**
+ * Call的OkHttp3实现，用于请求执行及之后的回调
+ */
 import static retrofit2.Utils.checkNotNull;
 
 final class OkHttpCall<T> implements Call<T> {
@@ -35,7 +38,7 @@ final class OkHttpCall<T> implements Call<T> {
   // All guarded by this.
   private okhttp3.Call rawCall;
   private Throwable creationFailure; // Either a RuntimeException or IOException.
-  private boolean executed;
+  private boolean executed;// 通过这个来保证只执行一次
 
   OkHttpCall(ServiceMethod<T, ?> serviceMethod, Object[] args) {
     this.serviceMethod = serviceMethod;
@@ -84,7 +87,7 @@ final class OkHttpCall<T> implements Call<T> {
       failure = creationFailure;
       if (call == null && failure == null) {
         try {
-          call = rawCall = createRawCall();
+          call = rawCall = createRawCall();// 创建OkHttp3.Call
         } catch (Throwable t) {
           failure = creationFailure = t;
         }
@@ -105,7 +108,7 @@ final class OkHttpCall<T> implements Call<T> {
           throws IOException {
         Response<T> response;
         try {
-          response = parseResponse(rawResponse);
+          response = parseResponse(rawResponse);// ->
         } catch (Throwable e) {
           callFailure(e);
           return;
@@ -161,7 +164,7 @@ final class OkHttpCall<T> implements Call<T> {
       call = rawCall;
       if (call == null) {
         try {
-          call = rawCall = createRawCall();
+          call = rawCall = createRawCall();// 创建OkHttp3.Call
         } catch (IOException | RuntimeException e) {
           creationFailure = e;
           throw e;
@@ -173,12 +176,12 @@ final class OkHttpCall<T> implements Call<T> {
       call.cancel();
     }
 
-    return parseResponse(call.execute());
+    return parseResponse(call.execute());// ->
   }
 
   private okhttp3.Call createRawCall() throws IOException {
-    Request request = serviceMethod.toRequest(args);
-    okhttp3.Call call = serviceMethod.callFactory.newCall(request);
+    Request request = serviceMethod.toRequest(args);// 根据ParameterHandler组装Request.Builder，生成Request
+    okhttp3.Call call = serviceMethod.callFactory.newCall(request);// Retrofit中创建的new OkHttpClient().newCall(request)
     if (call == null) {
       throw new NullPointerException("Call.Factory returned null.");
     }
@@ -194,7 +197,7 @@ final class OkHttpCall<T> implements Call<T> {
         .build();
 
     int code = rawResponse.code();
-    if (code < 200 || code >= 300) {
+    if (code < 200 || code >= 300) {// 状态码2XX一般为成功
       try {
         // Buffer the entire body to avoid future I/O.
         ResponseBody bufferedBody = Utils.buffer(rawBody);
@@ -204,14 +207,14 @@ final class OkHttpCall<T> implements Call<T> {
       }
     }
 
-    if (code == 204 || code == 205) {
+    if (code == 204 || code == 205) {// 只是返回成功状态，不需要别的，比如body
       rawBody.close();
       return Response.success(null, rawResponse);
     }
 
     ExceptionCatchingRequestBody catchingBody = new ExceptionCatchingRequestBody(rawBody);
     try {
-      T body = serviceMethod.toResponse(catchingBody);
+      T body = serviceMethod.toResponse(catchingBody);// 解析body，比如Gson解析
       return Response.success(body, rawResponse);
     } catch (RuntimeException e) {
       // If the underlying source threw an exception, propagate that rather than indicating it was
