@@ -33,13 +33,18 @@ final class SegmentPool {
   private SegmentPool() {
   }
 
+  /**
+   * new next = old next.next，方便下次使用；
+   * result = next，且 result.next = null，返回 result
+   * @return
+   */
   static Segment take() {
     synchronized (SegmentPool.class) {
       if (next != null) {
         Segment result = next;
         next = result.next;
         result.next = null;
-        byteCount -= Segment.SIZE;
+        byteCount -= Segment.SIZE;// 总字节数中移去一个Segment的大小
         return result;
       }
     }

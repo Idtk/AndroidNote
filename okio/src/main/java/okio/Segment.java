@@ -92,6 +92,8 @@ final class Segment {
   /**
    * Appends {@code segment} after this segment in the circularly-linked list.
    * Returns the pushed segment.
+   *
+   * 在尾部插入Segment
    */
   public Segment push(Segment segment) {
     segment.prev = this;

@@ -614,9 +614,9 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     if (byteCount == 0) return "";
 
     Segment s = head;
-    if (s.pos + byteCount > s.limit) {
+    if (s.pos + byteCount > s.limit) { // 如果不止一个Segment，则继续读链表的
       // If the string spans multiple segments, delegate to readBytes().
-      return new String(readByteArray(byteCount), charset);
+      return new String(readByteArray(byteCount), charset);// ->
     }
 
     String result = new String(s.data, s.pos, (int) byteCount, charset);
@@ -624,8 +624,8 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     size -= byteCount;
 
     if (s.pos == s.limit) {
-      head = s.pop();
-      SegmentPool.recycle(s);
+      head = s.pop();// 移除s，head指向s.next
+      SegmentPool.recycle(s); // 回收
     }
 
     return result;
@@ -765,7 +765,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     }
 
     byte[] result = new byte[(int) byteCount];
-    readFully(result);
+    readFully(result);// 读取result长度的字节
     return result;
   }
 
@@ -775,8 +775,8 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
 
   @Override public void readFully(byte[] sink) throws EOFException {
     int offset = 0;
-    while (offset < sink.length) {
-      int read = read(sink, offset, sink.length - offset);
+    while (offset < sink.length) {// 循环读取，直到长度等于sink.length
+      int read = read(sink, offset, sink.length - offset);// 移除sink.length - offset的字节到sink中
       if (read == -1) throw new EOFException();
       offset += read;
     }
@@ -1001,7 +1001,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
   @Override public long writeAll(Source source) throws IOException {
     if (source == null) throw new IllegalArgumentException("source == null");
     long totalBytesRead = 0;
-    for (long readCount; (readCount = source.read(this, Segment.SIZE)) != -1; ) {
+    for (long readCount; (readCount = source.read(this, Segment.SIZE)) != -1; ) {// 循环读取一个个Segment，直到读完
       totalBytesRead += readCount;
     }
     return totalBytesRead;
@@ -1154,18 +1154,24 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
   /**
    * Returns a tail segment that we can write at least {@code minimumCapacity}
    * bytes to, creating it if necessary.
+   *
+   * 问head前一个Segment还有木有minimumCapacity大小的空间了，这里返回head的前一个Segment，因为是循环，所以前一个即为tail
+   * 没有就在tail的后面插入一个Segment，这里返回新的Segment
    */
   Segment writableSegment(int minimumCapacity) {
     if (minimumCapacity < 1 || minimumCapacity > Segment.SIZE) throw new IllegalArgumentException();
 
     if (head == null) {
-      head = SegmentPool.take(); // Acquire a first segment.
+      // SegmentPool.take()把head.next置为null
+      head = SegmentPool.take(); // Acquire a first segment.->
       return head.next = head.prev = head;
     }
 
     Segment tail = head.prev;
+    // 如果超过尺寸了或者不可增加字节了，则新增加一个Segment
     if (tail.limit + minimumCapacity > Segment.SIZE || !tail.owner) {
-      tail = tail.push(SegmentPool.take()); // Append a new empty segment to fill up.
+      // 插入一个Segment
+      tail = tail.push(SegmentPool.take()); // Append a new empty segment to fill up.->
     }
     return tail;
   }

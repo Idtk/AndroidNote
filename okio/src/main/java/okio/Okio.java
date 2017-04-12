@@ -47,7 +47,7 @@ public final class Okio {
    * you read a source to get an ergonomic and efficient access to data.
    */
   public static BufferedSource buffer(Source source) {
-    return new RealBufferedSource(source);
+    return new RealBufferedSource(source);// ->
   }
 
   /**
@@ -127,18 +127,18 @@ public final class Okio {
     if (in == null) throw new IllegalArgumentException("in == null");
     if (timeout == null) throw new IllegalArgumentException("timeout == null");
 
-    return new Source() {
+    return new Source() {// 创建了一个匿名类
       @Override public long read(Buffer sink, long byteCount) throws IOException {
         if (byteCount < 0) throw new IllegalArgumentException("byteCount < 0: " + byteCount);
         if (byteCount == 0) return 0;
         try {
           timeout.throwIfReached();
-          Segment tail = sink.writableSegment(1);
+          Segment tail = sink.writableSegment(1);// -> 还有至少一个字节空间的Segment
           int maxToCopy = (int) Math.min(byteCount, Segment.SIZE - tail.limit);
-          int bytesRead = in.read(tail.data, tail.limit, maxToCopy);
+          int bytesRead = in.read(tail.data, tail.limit, maxToCopy);// inputStream读取maxToCopy字节，存入tail尾部
           if (bytesRead == -1) return -1;
-          tail.limit += bytesRead;
-          sink.size += bytesRead;
+          tail.limit += bytesRead;// 更新下这个Segment已使用的大小
+          sink.size += bytesRead;// 更新下Buffer的大小
           return bytesRead;
         } catch (AssertionError e) {
           if (isAndroidGetsocknameError(e)) throw new IOException(e);
