@@ -74,8 +74,8 @@ public final class Okio {
         while (byteCount > 0) {
           timeout.throwIfReached();
           Segment head = source.head;
-          int toCopy = (int) Math.min(byteCount, head.limit - head.pos);
-          out.write(head.data, head.pos, toCopy);
+          int toCopy = (int) Math.min(byteCount, head.limit - head.pos);// 字节数和head长度取小
+          out.write(head.data, head.pos, toCopy);// OutputStream中toCopy字节写入head
 
           head.pos += toCopy;
           byteCount -= toCopy;
@@ -135,7 +135,7 @@ public final class Okio {
           timeout.throwIfReached();
           Segment tail = sink.writableSegment(1);// -> 还有至少一个字节空间的Segment
           int maxToCopy = (int) Math.min(byteCount, Segment.SIZE - tail.limit);
-          int bytesRead = in.read(tail.data, tail.limit, maxToCopy);// inputStream读取maxToCopy字节，存入tail尾部
+          int bytesRead = in.read(tail.data, tail.limit, maxToCopy);// inputStream中maxToCopy字节，读入tail
           if (bytesRead == -1) return -1;
           tail.limit += bytesRead;// 更新下这个Segment已使用的大小
           sink.size += bytesRead;// 更新下Buffer的大小

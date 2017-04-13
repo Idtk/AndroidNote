@@ -856,18 +856,18 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     for (int i = beginIndex; i < endIndex;) {
       int c = string.charAt(i);
 
-      if (c < 0x80) {
-        Segment tail = writableSegment(1);
+      if (c < 0x80) {// ASCII
+        Segment tail = writableSegment(1);// 获取尾部的Segment
         byte[] data = tail.data;
         int segmentOffset = tail.limit - i;
         int runLimit = Math.min(endIndex, Segment.SIZE - segmentOffset);
 
         // Emit a 7-bit character with 1 byte.
-        data[segmentOffset + i++] = (byte) c; // 0xxxxxxx
+        data[segmentOffset + i++] = (byte) c; // 0xxxxxxx tail装入对应字节
 
         // Fast-path contiguous runs of ASCII characters. This is ugly, but yields a ~4x performance
         // improvement over independent calls to writeByte().
-        while (i < runLimit) {
+        while (i < runLimit) {// 不断的装入字节，如果是ASCII，直到遇到非ASCII字节，则跳出循环
           c = string.charAt(i);
           if (c >= 0x80) break;
           data[segmentOffset + i++] = (byte) c; // 0xxxxxxx
