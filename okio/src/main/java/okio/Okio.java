@@ -72,18 +72,18 @@ public final class Okio {
       @Override public void write(Buffer source, long byteCount) throws IOException {
         checkOffsetAndCount(source.size, 0, byteCount);
         while (byteCount > 0) {
-          timeout.throwIfReached();
-          Segment head = source.head;
-          int toCopy = (int) Math.min(byteCount, head.limit - head.pos);// 字节数和head长度取小
-          out.write(head.data, head.pos, toCopy);// OutputStream中toCopy字节写入head
+          timeout.throwIfReached();// 超时判断
+          Segment head = source.head;// 链表头
+          int toCopy = (int) Math.min(byteCount, head.limit - head.pos);// 可写入的数据长度
+          out.write(head.data, head.pos, toCopy);// toCopy长度的数据写入out输出流
 
-          head.pos += toCopy;
-          byteCount -= toCopy;
-          source.size -= toCopy;
+          head.pos += toCopy; // 更新起点指针
+          byteCount -= toCopy; // 总数据指针
+          source.size -= toCopy; // 更新Buffer的大小
 
-          if (head.pos == head.limit) {
-            source.head = head.pop();
-            SegmentPool.recycle(head);
+          if (head.pos == head.limit) { // 如果此Segment已经读完，则回收Segment
+            source.head = head.pop(); // 从Buffer中移除此Segment
+            SegmentPool.recycle(head);// 回收此Segment
           }
         }
       }
@@ -135,9 +135,9 @@ public final class Okio {
           timeout.throwIfReached();
           Segment tail = sink.writableSegment(1);// -> 还有至少一个字节空间的Segment
           int maxToCopy = (int) Math.min(byteCount, Segment.SIZE - tail.limit);
-          int bytesRead = in.read(tail.data, tail.limit, maxToCopy);// inputStream中maxToCopy字节，读入tail
+          int bytesRead = in.read(tail.data, tail.limit, maxToCopy);// inputStream读入maxToCopy字节的tail
           if (bytesRead == -1) return -1;
-          tail.limit += bytesRead;// 更新下这个Segment已使用的大小
+          tail.limit += bytesRead;// 更新结尾指针
           sink.size += bytesRead;// 更新下Buffer的大小
           return bytesRead;
         } catch (AssertionError e) {

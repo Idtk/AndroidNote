@@ -95,7 +95,7 @@ final class ServiceMethod<R, T> {
   /** Builds an HTTP request from method arguments. */
   Request toRequest(Object... args) throws IOException {
     RequestBuilder requestBuilder = new RequestBuilder(httpMethod, baseUrl, relativeUrl, headers,
-        contentType, hasBody, isFormEncoded, isMultipart);
+        contentType, hasBody, isFormEncoded, isMultipart);// 根据之前解析的方法注解，创建requestBuilder
 
     @SuppressWarnings("unchecked") // It is an error to invoke a method with the wrong arg types.
     ParameterHandler<Object>[] handlers = (ParameterHandler<Object>[]) parameterHandlers;
@@ -107,7 +107,7 @@ final class ServiceMethod<R, T> {
     }
 
     for (int p = 0; p < argumentCount; p++) {
-      handlers[p].apply(requestBuilder, args[p]);// 组装requestBuilder
+      handlers[p].apply(requestBuilder, args[p]);// 根据之前解析的方法参数注解，组装requestBuilder
     }
 
     return requestBuilder.build();
@@ -174,7 +174,7 @@ final class ServiceMethod<R, T> {
       responseConverter = createResponseConverter();// 响应的转换工厂，如GsonConverterFactory
 
       for (Annotation annotation : methodAnnotations) {
-        parseMethodAnnotation(annotation);// 真正解析注解的地方来了
+        parseMethodAnnotation(annotation);// 真正解析方法注解的地方来了
       }
 
       if (httpMethod == null) {

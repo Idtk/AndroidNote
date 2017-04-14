@@ -49,7 +49,7 @@ final class RealBufferedSink implements BufferedSink {
 
   @Override public BufferedSink writeUtf8(String string) throws IOException {
     if (closed) throw new IllegalStateException("closed");
-    buffer.writeUtf8(string);
+    buffer.writeUtf8(string);// 数据存入缓冲区
     return emitCompleteSegments();
   }
 
@@ -167,8 +167,8 @@ final class RealBufferedSink implements BufferedSink {
 
   @Override public BufferedSink emitCompleteSegments() throws IOException {
     if (closed) throw new IllegalStateException("closed");
-    long byteCount = buffer.completeSegmentByteCount();
-    if (byteCount > 0) sink.write(buffer, byteCount);
+    long byteCount = buffer.completeSegmentByteCount();// 写入缓冲区的字节数
+    if (byteCount > 0) sink.write(buffer, byteCount);// 写入OutputStream
     return this;
   }
 

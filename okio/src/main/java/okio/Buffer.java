@@ -859,7 +859,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
       if (c < 0x80) {// ASCII 1个字节
         Segment tail = writableSegment(1);// 获取尾部的Segment
         byte[] data = tail.data;
-        int segmentOffset = tail.limit - i;
+        int segmentOffset = tail.limit - i;// 获取装载的起点
         int runLimit = Math.min(endIndex, Segment.SIZE - segmentOffset);
 
         // Emit a 7-bit character with 1 byte.
@@ -873,14 +873,15 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
           data[segmentOffset + i++] = (byte) c; // 0xxxxxxx
         }
 
+        // 增加的字节数量
         int runSize = i + segmentOffset - tail.limit; // Equivalent to i - (previous i).
         tail.limit += runSize;
         size += runSize;
 
       } else if (c < 0x800) { // 2个字节
         // Emit a 11-bit character with 2 bytes.
-        writeByte(c >>  6        | 0xc0); // 110xxxxx
-        writeByte(c       & 0x3f | 0x80); // 10xxxxxx
+        writeByte(c >>  6        | 0xc0); // 110xxxxx 高5位装载成高8位
+        writeByte(c       & 0x3f | 0x80); // 10xxxxxx 低6位装载成低8位
         i++;
 
       } else if (c < 0xd800 || c > 0xdfff) {// 3个字节

@@ -39,8 +39,8 @@ final class SegmentPool {
    * @return
    */
   static Segment take() {
-    synchronized (SegmentPool.class) {
-      if (next != null) {
+    synchronized (SegmentPool.class) {// 锁保护
+      if (next != null) {// 取出一个Segment，池中的字节数减少
         Segment result = next;
         next = result.next;
         result.next = null;
@@ -48,17 +48,19 @@ final class SegmentPool {
         return result;
       }
     }
+    // Pool中没有Segment，有可能是新的第一个Segment，也有可能是之前Pool中的Segment都被使用了
     return new Segment(); // Pool is empty. Don't zero-fill while holding a lock.
   }
 
   static void recycle(Segment segment) {
     if (segment.next != null || segment.prev != null) throw new IllegalArgumentException();
     if (segment.shared) return; // This segment cannot be recycled.
-    synchronized (SegmentPool.class) {
+    synchronized (SegmentPool.class) {// 锁保护
+      // 如果在限定的池尺寸范围内，则在Pool中加入这个回收的Segment，池的字节数也相应增加
       if (byteCount + Segment.SIZE > MAX_SIZE) return; // Pool is full.
       byteCount += Segment.SIZE;
       segment.next = next;
-      segment.pos = segment.limit = 0;
+      segment.pos = segment.limit = 0;// 清空
       next = segment;
     }
   }
