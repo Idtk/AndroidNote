@@ -72,7 +72,7 @@ public class AsyncTimeout extends Timeout {
     if (inQueue) throw new IllegalStateException("Unbalanced enter/exit");
     long timeoutNanos = timeoutNanos();
     boolean hasDeadline = hasDeadline();
-    if (timeoutNanos == 0 && !hasDeadline) {
+    if (timeoutNanos == 0 && !hasDeadline) {// 没有超时设置
       return; // No timeout and no deadline? Don't bother with the queue.
     }
     inQueue = true;
@@ -84,7 +84,7 @@ public class AsyncTimeout extends Timeout {
     // Start the watchdog thread and create the head node when the first timeout is scheduled.
     if (head == null) {
       head = new AsyncTimeout();
-      new Watchdog().start();
+      new Watchdog().start();// 看门狗 = =
     }
 
     long now = System.nanoTime();
@@ -103,6 +103,8 @@ public class AsyncTimeout extends Timeout {
     // Insert the node in sorted order.
     long remainingNanos = node.remainingNanos(now);
     for (AsyncTimeout prev = head; true; prev = prev.next) {
+      // 如果下一个为null 或者 剩余时间比下一个短，则插入node
+      // 可以看出这个一个按照剩余时间排列的链表
       if (prev.next == null || remainingNanos < prev.next.remainingNanos(now)) {
         node.next = prev.next;
         prev.next = node;
@@ -117,7 +119,7 @@ public class AsyncTimeout extends Timeout {
   /** Returns true if the timeout occurred. */
   public final boolean exit() {
     if (!inQueue) return false;
-    inQueue = false;
+    inQueue = false;// 此节点移除队列
     return cancelScheduledTimeout(this);
   }
 
@@ -125,6 +127,7 @@ public class AsyncTimeout extends Timeout {
   private static synchronized boolean cancelScheduledTimeout(AsyncTimeout node) {
     // Remove the node from the linked list.
     for (AsyncTimeout prev = head; prev != null; prev = prev.next) {
+      // 队列中下一个就是此节点，则把节点从超时队列中移除
       if (prev.next == node) {
         prev.next = node.next;
         node.next = null;
@@ -154,6 +157,8 @@ public class AsyncTimeout extends Timeout {
   /**
    * Returns a new sink that delegates to {@code sink}, using this to implement timeouts. This works
    * best if {@link #timedOut} is overridden to interrupt {@code sink}'s current operation.
+   *
+   * 装饰模式，通过对输入参数sink装饰，生成新的Sink匿名类，在其中增加了异步超时检测
    */
   public final Sink sink(final Sink sink) {
     return new Sink() {
@@ -174,15 +179,15 @@ public class AsyncTimeout extends Timeout {
 
           // Emit one write. Only this section is subject to the timeout.
           boolean throwOnTimeout = false;
-          enter();
+          enter();// 添加超时监听
           try {
             sink.write(source, toWrite);
             byteCount -= toWrite;
             throwOnTimeout = true;
           } catch (IOException e) {
-            throw exit(e);
+            throw exit(e);// ->
           } finally {
-            exit(throwOnTimeout);
+            exit(throwOnTimeout);// ->
           }
         }
       }
@@ -300,7 +305,7 @@ public class AsyncTimeout extends Timeout {
   private static final class Watchdog extends Thread {
     public Watchdog() {
       super("Okio Watchdog");
-      setDaemon(true);
+      setDaemon(true);// 守护线程
     }
 
     public void run() {
@@ -308,9 +313,10 @@ public class AsyncTimeout extends Timeout {
         try {
           AsyncTimeout timedOut;
           synchronized (AsyncTimeout.class) {
-            timedOut = awaitTimeout();
+            timedOut = awaitTimeout();// 超时阻塞
 
             // Didn't find a node to interrupt. Try again.
+            // 没有找到需要拦截的节点，下一个
             if (timedOut == null) continue;
 
             // The queue is completely empty. Let this thread exit and let another watchdog thread
@@ -338,20 +344,22 @@ public class AsyncTimeout extends Timeout {
    */
   static AsyncTimeout awaitTimeout() throws InterruptedException {
     // Get the next eligible node.
-    AsyncTimeout node = head.next;
+    AsyncTimeout node = head.next;// 下一个
 
     // The queue is empty. Wait until either something is enqueued or the idle timeout elapses.
+    // 如果为null，则返回null或者等待IDLE_TIMEOUT_MILLIS触发
     if (node == null) {
       long startNanos = System.nanoTime();
       AsyncTimeout.class.wait(IDLE_TIMEOUT_MILLIS);
       return head.next == null && (System.nanoTime() - startNanos) >= IDLE_TIMEOUT_NANOS
-          ? head  // The idle timeout elapsed.
+          ? head  // The idle timeout elapsed. 超时咯
           : null; // The situation has changed.
     }
 
     long waitNanos = node.remainingNanos(System.nanoTime());
 
     // The head of the queue hasn't timed out yet. Await that.
+    // 如果这个节点还没有超时，则等待超时触发，返回null
     if (waitNanos > 0) {
       // Waiting is made complicated by the fact that we work in nanoseconds,
       // but the API wants (millis, nanos) in two arguments.
@@ -362,6 +370,7 @@ public class AsyncTimeout extends Timeout {
     }
 
     // The head of the queue has timed out. Remove it.
+    // 移除超时结点
     head.next = node.next;
     node.next = null;
     return node;

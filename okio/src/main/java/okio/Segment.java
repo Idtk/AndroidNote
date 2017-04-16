@@ -79,6 +79,8 @@ final class Segment {
   /**
    * Removes this segment of a circularly-linked list and returns its successor.
    * Returns null if the list is now empty.
+   *
+   * 移除当前节点
    */
   public Segment pop() {
     Segment result = next != this ? next : null;
@@ -93,7 +95,7 @@ final class Segment {
    * Appends {@code segment} after this segment in the circularly-linked list.
    * Returns the pushed segment.
    *
-   * 在尾部插入Segment
+   * 在当前next中间插入一个Segment
    */
   public Segment push(Segment segment) {
     segment.prev = this;
@@ -120,48 +122,51 @@ final class Segment {
     //  - Avoid short shared segments. These are bad for performance because they are readonly and
     //    may lead to long chains of short segments.
     // To balance these goals we only share segments when the copy will be large.
-    if (byteCount >= SHARE_MINIMUM) {
-      prefix = new Segment(this);
+    if (byteCount >= SHARE_MINIMUM) { // 如果byteCount大于共享要求的最小尺寸
+      prefix = new Segment(this);// 共享
     } else {
       prefix = SegmentPool.take();
-      System.arraycopy(data, pos, prefix.data, 0, byteCount);
+      System.arraycopy(data, pos, prefix.data, 0, byteCount);// 拷贝
     }
 
-    prefix.limit = prefix.pos + byteCount;
-    pos += byteCount;
-    prev.push(prefix);
+    prefix.limit = prefix.pos + byteCount;// 更新终点位置
+    pos += byteCount;// 更新起点位置
+    prev.push(prefix);// 插入prefix
     return prefix;
   }
 
   /**
    * Call this when the tail and its predecessor may both be less than half
    * full. This will copy data so that segments can be recycled.
+   *
+   * 压缩数据
    */
   public void compact() {
     if (prev == this) throw new IllegalStateException();
     if (!prev.owner) return; // Cannot compact: prev isn't writable.
     int byteCount = limit - pos;
-    int availableByteCount = SIZE - prev.limit + (prev.shared ? 0 : prev.pos);
+    int availableByteCount = SIZE - prev.limit + (prev.shared ? 0 : prev.pos);// 前一个Segment的剩余空间大小
     if (byteCount > availableByteCount) return; // Cannot compact: not enough writable space.
-    writeTo(prev, byteCount);
-    pop();
-    SegmentPool.recycle(this);
+    writeTo(prev, byteCount);// 数据写入前一个Segment
+    pop();// 移除当前Segment
+    SegmentPool.recycle(this);// 回收当前Segment
   }
 
   /** Moves {@code byteCount} bytes from this segment to {@code sink}. */
   public void writeTo(Segment sink, int byteCount) {
     if (!sink.owner) throw new IllegalArgumentException();
-    if (sink.limit + byteCount > SIZE) {
+    if (sink.limit + byteCount > SIZE) {// 如果直接写超过了尺寸限制
       // We can't fit byteCount bytes at the sink's current position. Shift sink first.
       if (sink.shared) throw new IllegalArgumentException();
-      if (sink.limit + byteCount - sink.pos > SIZE) throw new IllegalArgumentException();
+      if (sink.limit + byteCount - sink.pos > SIZE) throw new IllegalArgumentException();// 超出尺寸限制
+      // 起点指针前移到0，拷贝数据
       System.arraycopy(sink.data, sink.pos, sink.data, 0, sink.limit - sink.pos);
-      sink.limit -= sink.pos;
-      sink.pos = 0;
+      sink.limit -= sink.pos;// 更新终点index
+      sink.pos = 0;// 更新起点index
     }
-
+    // 在末尾插入Segment的数据
     System.arraycopy(data, pos, sink.data, sink.limit, byteCount);
-    sink.limit += byteCount;
-    pos += byteCount;
+    sink.limit += byteCount;// 更新终点index
+    pos += byteCount;// 更新起点index
   }
 }

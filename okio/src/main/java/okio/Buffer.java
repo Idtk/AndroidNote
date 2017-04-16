@@ -857,7 +857,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
       int c = string.charAt(i);
 
       if (c < 0x80) {// ASCII 1个字节
-        Segment tail = writableSegment(1);// 获取尾部的Segment
+        Segment tail = writableSegment(1);// 获取可写的尾部Segment
         byte[] data = tail.data;
         int segmentOffset = tail.limit - i;// 获取装载的起点
         int runLimit = Math.min(endIndex, Segment.SIZE - segmentOffset);
@@ -1019,7 +1019,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
 
   @Override public Buffer writeByte(int b) {
     Segment tail = writableSegment(1);
-    tail.data[tail.limit++] = (byte) b;
+    tail.data[tail.limit++] = (byte) b;// 通过自增来写入字节
     size += 1;
     return this;
   }
@@ -1165,7 +1165,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
     if (head == null) {
       // SegmentPool.take()把head.next置为null
       head = SegmentPool.take(); // Acquire a first segment.->
-      return head.next = head.prev = head;
+      return head.next = head.prev = head;// 形成双向列表闭环
     }
 
     Segment tail = head.prev;
@@ -1256,7 +1256,7 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
       source.head = segmentToMove.pop();
       if (head == null) {
         head = segmentToMove;
-        head.next = head.prev = head;
+        head.next = head.prev = head;// 形成双向列表闭环
       } else {
         Segment tail = head.prev;
         tail = tail.push(segmentToMove);
@@ -1673,12 +1673,13 @@ public final class Buffer implements BufferedSource, BufferedSink, Cloneable {
   }
 
   /** Returns a deep copy of this buffer. */
+  /** 深拷贝 */
   @Override public Buffer clone() {
     Buffer result = new Buffer();
     if (size == 0) return result;
 
     result.head = new Segment(head);
-    result.head.next = result.head.prev = result.head;
+    result.head.next = result.head.prev = result.head;// 形成双向列表闭环
     for (Segment s = head.next; s != head; s = s.next) {
       result.head.prev.push(new Segment(s));
     }

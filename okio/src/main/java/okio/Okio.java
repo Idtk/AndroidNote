@@ -64,6 +64,12 @@ public final class Okio {
     return sink(out, new Timeout());
   }
 
+  /**
+   * 生成一个匿名Sink
+   * @param out
+   * @param timeout
+   * @return
+   */
   private static Sink sink(final OutputStream out, final Timeout timeout) {
     if (out == null) throw new IllegalArgumentException("out == null");
     if (timeout == null) throw new IllegalArgumentException("timeout == null");
@@ -221,6 +227,11 @@ public final class Okio {
     return timeout.source(source);
   }
 
+  /**
+   * 生成一个匿名的AsyncTimeout
+   * @param socket
+   * @return
+   */
   private static AsyncTimeout timeout(final Socket socket) {
     return new AsyncTimeout() {
       @Override protected IOException newTimeoutException(IOException cause) {

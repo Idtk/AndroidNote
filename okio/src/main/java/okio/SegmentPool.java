@@ -34,8 +34,8 @@ final class SegmentPool {
   }
 
   /**
-   * new next = old next.next，方便下次使用；
-   * result = next，且 result.next = null，返回 result
+   * 如果池子为null，就新建一个Segment
+   * 否则就取出一个Segment，将next.next设置为next
    * @return
    */
   static Segment take() {
@@ -52,6 +52,12 @@ final class SegmentPool {
     return new Segment(); // Pool is empty. Don't zero-fill while holding a lock.
   }
 
+  /**
+   * 如果当前要回收的segment有前后引用或者是共享的 那么就回收失败
+   * 如果加入后的大小超过了最大大小 返回null
+   * 将Segment插入到next之前
+   * @param segment
+   */
   static void recycle(Segment segment) {
     if (segment.next != null || segment.prev != null) throw new IllegalArgumentException();
     if (segment.shared) return; // This segment cannot be recycled.
