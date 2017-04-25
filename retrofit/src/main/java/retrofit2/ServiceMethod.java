@@ -210,7 +210,7 @@ final class ServiceMethod<R, T> {
           throw parameterError(p, "No Retrofit annotation found.");
         }
 
-        parameterHandlers[p] = parseParameter(p, parameterType, parameterAnnotations);// 生成了对应的参数注解ParameterHandler实现类
+        parameterHandlers[p] = parseParameter(p, parameterType, parameterAnnotations);// 生成了对应的参数注解ParameterHandler实例
       }
 
       if (relativeUrl == null && !gotUrl) {
@@ -250,7 +250,7 @@ final class ServiceMethod<R, T> {
     }
 
     /**
-     * 解析注解，呜啦啦
+     * 解析方法注解，呜啦啦
      * 通过判断注解类型来解析
      * @param annotation
      */
@@ -442,7 +442,7 @@ final class ServiceMethod<R, T> {
           Converter<?, String> converter =
               retrofit.stringConverter(iterableType, annotations);
           return new ParameterHandler.Query<>(name, converter, encoded).iterable();
-        } else if (rawParameterType.isArray()) {
+        } else if (rawParameterType.isArray()) {// array
           Class<?> arrayComponentType = boxIfPrimitive(rawParameterType.getComponentType());// 如果是基本类型，自动装箱
           Converter<?, String> converter =
               retrofit.stringConverter(arrayComponentType, annotations);

@@ -146,7 +146,7 @@ public final class Retrofit {
             if (platform.isDefaultMethod(method)) {
               return platform.invokeDefaultMethod(method, service, proxy, args);
             }
-            // 解析注解的，这个是正事
+            // 这里是核心代码
             ServiceMethod<Object, Object> serviceMethod =
                 (ServiceMethod<Object, Object>) loadServiceMethod(method);
             OkHttpCall<Object> okHttpCall = new OkHttpCall<>(serviceMethod, args);

@@ -42,7 +42,7 @@ class Platform {
     try {
       Class.forName("android.os.Build");
       if (Build.VERSION.SDK_INT != 0) {
-        // 这里是我们需要的Android，么么哒
+        // 这里是我们需要的Android
         return new Android();
       }
     } catch (ClassNotFoundException ignored) {
