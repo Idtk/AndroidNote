@@ -21,7 +21,7 @@
 * OkHttp / Retrofit / HTTP1、HTTP2、HTTP3
 * Glide / Picasso / Fresco / Luban / lottie
 * LeakCanary / MAT / Android Profile / dumpsys 命令 / 虚拟机日志
-* BlockCanary（原理Looper Log） / ANR-WatchDog (记得应该是另一个框架 原理都是Choreographer)
+* BlockCanary（原理Looper println） / Rabbit (记得应该是另一个框架 原理都是Choreographer)
 * ANR / Input / Service / BroadCast / Provider
 * 尺寸适配 / AndroidAutoSize / SmallestWidth
 * 组件化 / 网络 / 图片 / Utils / 中间件
