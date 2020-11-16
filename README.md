@@ -7,6 +7,9 @@
 * 栈 / 队列 / 链表 / 数组 / Map / Set / 树 /集合包（包含多线程安全集合）
 * 排序 / 搜索 / 分治 / 双指针 / 贪心 / 动态规划
 * 注解
+* SeviceLoader
+
+### 架构
 * MVC / MVP / MVVM / lifecycle套件
 
 ### Android
