@@ -14,7 +14,7 @@
 
 ### Android
 * Handle / 广播 / binder / socket / 序列化 / EventBus
-* Activity / Fragment / Service / Activity、Fragment数据恢复
+* Activity / Fragment / Service / Activity、Fragment数据恢复 / Context
 * Input / Window / Click / 状态栏 / 导航栏 / 键盘
 * View / 过度绘制 / ConstraintLayout / RecyclerView / Adapter
 * SharePreferences / Sqlite / ContentProvider / 私有空间与外部空间 / IO操作
