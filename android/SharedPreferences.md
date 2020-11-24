@@ -191,7 +191,7 @@ public static void putString(Context context, String key, String value) {
     }
 ```
 
-另一个问题是项目中封装的SharedUtil工具类，其提交方法直接使用了commit()的方式，这样如果在主线程调用，将可能会造成主线程的卡顿，应将其提交数据的方式改为apply()。另外其putXXX()方法内部直接进行了数据的提交，如果一个页面多次调用了putXXX()方法，将可能在stop时卡顿或直接ANR，建议将提交数据的方式单独拆开，给使用者进行调用。
+另一个问题是项目中封装的SharedUtil工具类，其提交方法直接使用了commit()的方式，这样如果在主线程调用，将可能会造成主线程的卡顿，应将其提交数据的方式改为apply()。另外其putXXX()方法内部直接进行了数据的提交，如果一个页面多次调用了putXXX()方法，将可能在stop时卡顿或直接ANR，可以通过修改源码的apply实现方式，将其多次提交的写操作改为内存数据合并来解决。
 
 ## 总结
 
