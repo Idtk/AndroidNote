@@ -32,7 +32,7 @@
 * 虚拟机Hook / Xposed / VirtualXposed / dexposed / epic
 * 保活 Leoric（双进程守护+文件锁）
 * 脚本 gradle / APK打包流程 / 多渠道打包 / 签名 V1、V2、V3 / Lint
-* 相机 Camera / Camera2 / CameraX / 分辨率、帧率、比特率
+* 相机 Camera / Camera2 / CameraX / 分辨率、帧率、比特率 / SurfaceView
 * WebView
 
 ### 版本适配
