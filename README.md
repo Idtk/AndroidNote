@@ -42,3 +42,5 @@
 * Android 9 / 全面屏 / 非SDK接口的限制 （有两种绕过API限制的方法，实现框架free_reflection）
 * Android 10 / 分区存储 / 深色主题
 * Android 11 / 分区存储 / 位置权限
+
+### 性能优化
