@@ -178,6 +178,9 @@ final class HandlerScheduler extends Scheduler {
 其中被观察者IO线程的切换是通过创建一个单核心线程的线程池来实现，其核心代码为`Executors.newScheduledThreadPool(1, EVICTOR_THREAD_FACTORY);`。而观察者的切换到主线程的实现是通过主线程Looper实现，核心代码为`new HandlerScheduler(new Handler(Looper.getMainLooper()), false);`。
 
 ## 背压
+
+我们在异步执行的场景中，时常会出现一些，被观察者发送数据的速度，远高于观察者处理速度的情况，这时候就需要背压了，背压可以降低观察者数据接收的速度。下面来看看背压有不同的策略</br>
+
 ```Java
 public enum BackpressureStrategy {
     MISSING,
@@ -187,5 +190,17 @@ public enum BackpressureStrategy {
     LATEST
 }
 ```
-我们在异步执行的场景中，时常会出现一些，被观察者发送数据的速度，远高于观察者处理速度的情况，这时候就需要背压了，背压可以降低观察者数据接收的速度。
-背压有不同的策略，但除MISSING外，每个策略都持有了一个存储被观察者发送的数据的队列，然后通过观察者按照需求的速度来获取这个队列中的数据，以此完成对数据速度的降速处理，其场景又是生产者————消费者的设计模式。
+
+MISSING的效果和不使用背压策略时的效果类似，这里不多做说明。</br>
+
+ERROR与DROP策略类似，有一个控制发送数量的功能，不同之处在于超出数量后，ERROR会有报错提示而DROP没有。</br>
+
+BUFFER的缓存是`SpscLinkedArrayQueue<T> queue`，当在onNext的时候会不断的`offer`数据，之后通过`for (;;)`去不断的取出其中的数据，因为其容量长度不限，所以在内存允许的范围内，下游将可以完整的有序的获取到所有数据。</br>
+
+LATEST的缓存是`AtomicReference<T> queue`，当在onNext的时候，会去不断刷新，之后有一个循环不断去取，所以最后的一个值一定是可以取到的。</br>
+
+背压有不同的策略，但除MISSING外的其余策略都通过`BackpressureHelper`支持了控制发送数量的功能，另外BUFFER、LATEST策略两者都持有了一个存储被观察者发送的数据的缓存，只不过可以缓存的大小不同罢了。并且会通过`for (;;)`去取缓存中的数据发送给下游，以此完成对数据速度的降速处理。</br>
+
+有的同学可能会说，他们在使用MISSING策略并且设置request(num)时是有效的，我想这可能是因为你们在使用时同时使用了`observeOn(AndroidSchedulers.mainThread())`方法，其Subscriber实现为`ObserveOnSubscriber`类。其内部通过`queue = new SpscArrayQueue<T>(prefetch);`队列控制了可以输出的数据大小，p这里的refetch就是从observeOn中传入的。</br>
+
+通过以上分析可以看出，背压的处理其实就是我们平时很常见的生产者————消费者的设计模式。</br>
