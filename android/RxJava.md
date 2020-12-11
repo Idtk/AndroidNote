@@ -191,16 +191,8 @@ public enum BackpressureStrategy {
 }
 ```
 
-MISSING的效果和不使用背压策略时的效果类似，这里不多做说明。</br>
+MISSING的效果和不使用背压策略时的效果类似，只有有一个更友好的报错。ERROR与DROP策略类似，不同之处在于超出数量后，ERROR会有报错提示而DROP没有。BUFFER的缓存是`SpscLinkedArrayQueue<T> queue`，当在onNext的时候会不断的`offer`数据，之后通过`for (;;)`去不断的取出其中的数据，因为其容量长度不限，所以在内存允许的范围内，下游将可以完整的有序的获取到所有数据。LATEST的缓存是`AtomicReference<T> queue`，当在onNext的时候，会去不断刷新，之后有一个循环不断去取，所以最后的一个值一定是可以取到的。</br>
 
-ERROR与DROP策略类似，有一个控制发送数量的功能，不同之处在于超出数量后，ERROR会有报错提示而DROP没有。</br>
+BUFFER、LATEST策略两者都持有了一个存储被观察者发送的数据的缓存，只不过可以缓存的大小不同罢了。并且会通过`for (;;)`去取缓存中的数据发送给下游，以此完成对数据速度的降速处理。
 
-BUFFER的缓存是`SpscLinkedArrayQueue<T> queue`，当在onNext的时候会不断的`offer`数据，之后通过`for (;;)`去不断的取出其中的数据，因为其容量长度不限，所以在内存允许的范围内，下游将可以完整的有序的获取到所有数据。</br>
-
-LATEST的缓存是`AtomicReference<T> queue`，当在onNext的时候，会去不断刷新，之后有一个循环不断去取，所以最后的一个值一定是可以取到的。</br>
-
-背压有不同的策略，但除MISSING外的其余策略都通过`BackpressureHelper`支持了控制发送数量的功能，另外BUFFER、LATEST策略两者都持有了一个存储被观察者发送的数据的缓存，只不过可以缓存的大小不同罢了。并且会通过`for (;;)`去取缓存中的数据发送给下游，以此完成对数据速度的降速处理。</br>
-
-有的同学可能会说，他们在使用MISSING策略并且设置request(num)时是有效的，我想这可能是因为你们在使用时同时使用了`observeOn(AndroidSchedulers.mainThread())`方法，其Subscriber实现为`ObserveOnSubscriber`类。其内部通过`queue = new SpscArrayQueue<T>(prefetch);`队列控制了可以输出的数据大小，p这里的refetch就是从observeOn中传入的。</br>
-
-通过以上分析可以看出，背压的处理其实就是我们平时很常见的生产者————消费者的设计模式。</br>
+一般在使用时RxJava时都会切换线程，Flowable/Subscriber也不例外，使用的`observeOn(AndroidSchedulers.mainThread())`方法，其Subscriber实现为`ObserveOnSubscriber`类。其内部通过`queue = new SpscArrayQueue<T>(prefetch);`队列控制了可以输出的数据大小，这里的refetch就是从observeOn中传入的。可以看出背压的设计模式其实就是我们平时很常见的生产者————消费者模式。</br>
