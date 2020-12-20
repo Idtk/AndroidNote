@@ -1,3 +1,4 @@
+package com.basic;
 import java.util.Arrays;
 
 public class MergeSort {
