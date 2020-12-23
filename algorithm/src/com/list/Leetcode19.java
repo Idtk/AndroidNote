@@ -2,7 +2,6 @@ package com.list;
 
 public class Leetcode19 {
     public static void exec(){
-        // 构造数据
         ListNode A = new ListNode(1);
         int i = 1;
         ListNode temp = A;
