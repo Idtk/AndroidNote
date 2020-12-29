@@ -41,7 +41,7 @@ public class Leetcode234 {
         l2 = reverse(l2);
 
         // 比较l1、l2
-        ListNode p1 = l1;
+        // ListNode p1 = l1;
         ListNode p2 = l2;
         while(l1 != null && l2 != null){
             if(l1.value != l2.value){
