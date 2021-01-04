@@ -14,15 +14,25 @@ import com.list.Leetcode328;
 import com.list.Leetcode445;
 import com.list.Leetcode725;
 import com.list.Leetcode83;
+import com.tree.Leetcode101;
 import com.tree.Leetcode104;
 import com.tree.Leetcode110;
+import com.tree.Leetcode111;
+import com.tree.Leetcode112;
+import com.tree.Leetcode226;
+import com.tree.Leetcode404;
+import com.tree.Leetcode437;
 import com.tree.Leetcode543;
+import com.tree.Leetcode572;
+import com.tree.Leetcode617;
+import com.tree.Leetcode687;
 import com.tree.TreeNode;
 
 public class MainTest {
     public static void main(String[] args) throws Exception {
         System.out.println("Hello, World!");
-        Leetcode543.exec();
+        Leetcode687.exec();
+        // printTree(node);
     }
 
     /**
