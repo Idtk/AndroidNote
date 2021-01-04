@@ -193,6 +193,53 @@ public static void putString(Context context, String key, String value) {
 
 另一个问题是项目中封装的SharedUtil工具类，其提交方法直接使用了commit()的方式，这样如果在主线程调用，将可能会造成主线程的卡顿，应将其提交数据的方式改为apply()。另外其putXXX()方法内部直接进行了数据的提交，如果一个页面多次调用了putXXX()方法，将可能在stop时卡顿或直接ANR，可以通过修改源码的apply实现方式，将其多次提交的写操作改为内存数据合并来解决。
 
+## SP的线程安全锁
+我们以`putStirng`为例来看看SP的写锁
+```Java
+synchronized (mEditorLock) {
+    mModified.put(key, value);
+    return this;
+}
+```
+这里因为EditorImpl本身的mModified变量是一个用来存储数据的Map对象，而这个对象只有在apply/commit时才进行合并，所以需要Editor的锁mEditorLock。
+```Java
+synchronized (SharedPreferencesImpl.this.mLock) {
+    if (mDiskWritesInFlight > 0) {
+        mMap = new HashMap<String, Object>(mMap);
+    }
+    // 将 SharedPreferences.mMap 保存在 mcr.mapToWriteToDisk 中，mcr.mapToWriteToDisk 稍后会被写到磁盘
+    mapToWriteToDisk = mMap;
+    mDiskWritesInFlight++;
+
+    synchronized (mEditorLock) {
+        for (Map.Entry<String, Object> e : mModified.entrySet()) {
+            if (mapToWriteToDisk.containsKey(k)) {
+                    Object existingValue = mapToWriteToDisk.get(k);
+                    if (existingValue != null && existingValue.equals(v
+                        continue;
+                    }
+            }
+            mapToWriteToDisk.put(k, v);
+        }
+    }
+}
+synchronized (mWritingToDiskLock) {
+    writeToFile(mcr, isFromSyncCommit);
+}
+```
+这里需要三把锁，第一个是保证初始化时取出的Map能够正确的合并，第二个是保证put数据合并时的线程安全，第三个是保证写入硬盘时的正确性。
+
+```Java
+public String getString(String key, @Nullable String defValue) {
+    synchronized (mLock) {
+        awaitLoadedLocked();
+        String v = (String)mMap.get(key);
+        return v != null ? v : defValue;
+    }
+}
+```
+getString就比较简单了，只需要在读缓存mMap的时候，避免其他线程的写操作即可。
+
 ## 总结
 
 * 不要在SP中存放过大的Key和Value，这样会占用内存，更易频繁GC，造成卡顿。
