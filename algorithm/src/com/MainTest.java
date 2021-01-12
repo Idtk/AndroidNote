@@ -4,6 +4,9 @@ import java.util.Arrays;
 import java.util.Queue;
 
 import com.basic.HeapSort;
+import com.doublePointer.Leetcode167;
+import com.doublePointer.Leetcode345;
+import com.doublePointer.Leetcode633;
 import com.list.Leetcode160;
 import com.list.Leetcode19;
 import com.list.Leetcode206;
@@ -14,6 +17,8 @@ import com.list.Leetcode328;
 import com.list.Leetcode445;
 import com.list.Leetcode725;
 import com.list.Leetcode83;
+import com.queueAndstack.Leetcode503;
+import com.queueAndstack.Leetcode739;
 import com.tree.Leetcode101;
 import com.tree.Leetcode104;
 import com.tree.Leetcode108;
@@ -50,7 +55,7 @@ public class MainTest {
         System.out.println("Hello, World!");
         // TreeNode node =  Leetcode109.exec();
         // printTree(node);
-        Leetcode501.exec();
+        Leetcode345.exec();
         // System.out.println("result: "+result);
     }
 
