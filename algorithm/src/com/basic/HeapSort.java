@@ -9,6 +9,13 @@ public class HeapSort {
         System.out.println(Arrays.toString(arr));
     }
 
+
+    public static void exec() {
+        int []arr = {19,8,7,6,5,4,13,12,1};
+        sort(arr);
+        System.out.println(Arrays.toString(arr));
+    }
+
     public static void sort(int[] arr) {
         for (int i = arr.length / 2; i >= 1; i--) {
             adjustHeap(arr, i, arr.length);
