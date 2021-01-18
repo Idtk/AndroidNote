@@ -9,10 +9,16 @@ import com.doublePointer.Leetcode524;
 import com.doublePointer.Leetcode633;
 import com.doublePointer.Leetcode680;
 import com.doublePointer.Leetcode88;
+import com.greedy.Leetcode121;
+import com.greedy.Leetcode122;
 import com.greedy.Leetcode406;
 import com.greedy.Leetcode435;
 import com.greedy.Leetcode452;
 import com.greedy.Leetcode455;
+import com.greedy.Leetcode53;
+import com.greedy.Leetcode605;
+import com.greedy.Leetcode655;
+import com.greedy.Leetcode763;
 import com.list.Leetcode160;
 import com.list.Leetcode19;
 import com.list.Leetcode206;
@@ -64,7 +70,7 @@ public class MainTest {
         System.out.println("Hello, World!");
         // TreeNode node =  Leetcode109.exec();
         // printTree(node);
-        Leetcode406.exec();
+        Leetcode763.exec();
         // System.out.println("result: "+result);
     }
 
