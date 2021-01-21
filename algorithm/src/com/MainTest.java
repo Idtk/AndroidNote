@@ -2,6 +2,12 @@ package com;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
+import com.binary.Leetcode153;
+import com.binary.Leetcode278;
+import com.binary.Leetcode34;
+import com.binary.Leetcode540;
+import com.binary.Leetcode69;
+import com.binary.Leetcode744;
 import com.doublePointer.Leetcode141;
 import com.doublePointer.Leetcode167;
 import com.doublePointer.Leetcode345;
@@ -70,7 +76,7 @@ public class MainTest {
         System.out.println("Hello, World!");
         // TreeNode node =  Leetcode109.exec();
         // printTree(node);
-        Leetcode763.exec();
+        Leetcode34.exec();
         // System.out.println("result: "+result);
     }
 
