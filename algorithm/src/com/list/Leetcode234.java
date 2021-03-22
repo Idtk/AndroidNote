@@ -12,7 +12,7 @@ public class Leetcode234 {
         A1.next = A2;
         A2.next = A3;
         A3.next = A4;
-        pairs(A);
+        isPalindrome(A);
 
         // 验证列表
         ListNode tempEx = A;
@@ -20,6 +20,34 @@ public class Leetcode234 {
             System.out.println(tempEx.value+"");
             tempEx = tempEx.next;
         }
+    }
+
+    public static boolean isPalindrome(ListNode head) {
+        if (head == null || head.next == null){
+            return true;
+        }
+        ListNode fast = head;
+        ListNode slow = head;
+        ListNode pre = head;
+        ListNode prepre = null;
+        while (fast != null && fast.next != null){
+            pre = slow;
+            slow = slow.next;
+            fast = fast.next.next;
+            pre.next = prepre;
+            prepre = pre;
+        }
+        if (fast != null){
+            slow = slow.next;
+        }
+        while (pre!=null && slow!=null){
+            if (pre.value != slow.value){
+                return false;
+            }
+            pre = pre.next;
+            slow = slow.next;
+        }
+        return true;
     }
 
     public static void pairs(ListNode head){
