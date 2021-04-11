@@ -37,10 +37,15 @@
 
 ### 版本适配
 * Android 6 / 动态权限
-* Android 7 / FileProvider
-* Android 8 / NotificationChannel / 后台服务
-* Android 9 / 全面屏 / 非SDK接口的限制 （有两种绕过API限制的方法，实现框架free_reflection）
-* Android 10 / 分区存储 / 深色主题
-* Android 11 / 分区存储 / 位置权限
+* Android 7 / FileProvider/ 多窗口
+* Android 8 / NotificationChannel / 后台服务/ 存活才可接收广播/ 悬浮窗权限 / 权限组
+* Android 9 / 全面屏 / HTTP白名单 / 前台服务 / 非SDK接口的限制 （有两种绕过API限制的方法，实现框架free_reflection）
+* Android 10 / 分区存储 / 位置权限 / 深色主题 / 剪切板
+* Android 11 / 分区存储 / 位置权限 / 电话权限 / 包可见性从/ V2签名
 
 ### 性能优化
+* 内存
+* 启动App
+* 绘制/布局
+* Apk大小
+* 编译速度
