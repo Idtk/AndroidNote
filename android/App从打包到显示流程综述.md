@@ -29,5 +29,5 @@ Android apk有四种安装方式：
 * WMS的Session将会创建Surface的Session，进而创建缓冲区，以及管理缓冲区的ShareClient，为之后的界面显示做准备。当垂直同步信号到来时，app进行绘制，首先会申请获取缓存区的，在其上进行绘制后，再释放缓冲区。
 * 事件分发与事件读取线程，在系统启动时就会创建与运行。事件读取线程通过getEvents方法获取系统的输入事件，会将其中非驱动操作相关的事件通过QueuedListener接口传递给事件发分线程的InboundQueue队列。事件分发线程会通过窗口注册时的connection对象查找到事件对应的窗口，将其添加到connet.outboundQueue队列，之后根据事件类型进行分发。当App事件处理完成后将会调用其handleReceiveCallback方法，清除connect.waitQueue中的对应事件。
 
-## 整理流程图
-<img src="https://github.com/Idtk/AndroidNote/tree/master/android/img/App从打包到显示流程">
+## 流程图
+<img src="https://github.com/Idtk/AndroidNote/blob/master/android/img/App%E4%BB%8E%E6%89%93%E5%8C%85%E5%88%B0%E6%98%BE%E7%A4%BA%E6%B5%81%E7%A8%8B.png" title="流程图"/>
